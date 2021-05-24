@@ -1,10 +1,15 @@
-from django.shortcuts import render
-from django.urls import reverse_lazy
-from django.views.generic import CreateView
+from django.contrib.auth.models import User, Group
+from rest_framework import viewsets
+from rest_framework import permissions
+from .serializers import UserSerializer
 
-from . import forms
 
-class SignUp(CreateView):
-    form_class = forms.UserCreateForm
-    success_url = reverse_lazy('login')
-    template_name = 'accounts/register.html'
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    queryset = User.objects.all().order_by('-date_joined')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+

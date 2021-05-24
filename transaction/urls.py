@@ -1,10 +1,10 @@
 from django.urls import path
-from . import views
+from .views import TransactionView, TransactionSingleView
 
 app_name='transactions'
 
 urlpatterns = [
-    path('', views.TransactionList.as_view(), name="all"),
-    path('new/', views.CreateTransaction.as_view(), name="new"),
+    path('transactions/', TransactionView.as_view()),
+    path('transactions/<int:pk>', TransactionSingleView.as_view())
 
 ]
