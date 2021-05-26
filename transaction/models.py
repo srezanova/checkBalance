@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -18,4 +19,12 @@ class Transaction(models.Model):
     category = models.CharField(max_length=50)
 
     def __str__(self):
-        return f'{self.amount} {self.category} {self.created}'
+        return f'{self.amount} {self.category}-{self.group} {self.created}'
+
+class Total(models.Model):
+    total_income = Transaction.objects.filter(group=('Income')).aggregate(Sum('amount'))
+
+    
+
+
+
