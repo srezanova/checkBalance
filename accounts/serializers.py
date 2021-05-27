@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from transaction.models import Transaction
+
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
