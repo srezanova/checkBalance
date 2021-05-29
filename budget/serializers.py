@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Transaction, Group, Category # TotalExpense
+from .models import Transaction, Group, Category, Month
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,8 +16,17 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
-class TotalExpenseSerializer(serializers.ModelSerializer):
+class TotalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
         fields = ['amount']
     
+class TotalCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['category', 'amount']
+
+class MonthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Month
+        fields = '__all__'

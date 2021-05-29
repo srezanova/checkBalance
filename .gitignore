@@ -6,6 +6,8 @@ balance/settings.py
 settings.py
 .vscode/settings.json
 .vscode
+password ssh
+*.pub
 
 # Distribution / packaging
 .Python
