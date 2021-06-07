@@ -13,8 +13,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
 from rest_framework import mixins
 
-from .models import Transaction, Group, Category, Month
-from .serializers import TransactionSerializer, GroupSerializer, CategorySerializer, TotalSerializer, TotalCategorySerializer, MonthSerializer
+from .models import Transaction, Category, Month
+from .serializers import TransactionSerializer, CategorySerializer, TotalSerializer, TotalCategorySerializer, MonthSerializer
 
 class TransactionView(generics.ListCreateAPIView):
 
@@ -36,10 +36,10 @@ class TransactionSingleView(generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
         return Transaction.objects.filter(user = user.id)
 
-class GroupView(generics.ListAPIView):
-    permission_classes = ( IsAuthenticated, )
-    serializer_class = GroupSerializer
-    queryset = Group.objects.all()
+# class GroupView(generics.ListAPIView):
+#     permission_classes = ( IsAuthenticated, )
+#     serializer_class = GroupSerializer
+#     queryset = Group.objects.all()
 
 class CategoryView(generics.ListCreateAPIView):
     permission_classes = ( IsAuthenticated, )
