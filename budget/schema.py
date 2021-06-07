@@ -2,6 +2,7 @@ import graphene
 from graphene_django import DjangoObjectType, DjangoListField
 from .models import Transaction, Category, Month
 from graphql import GraphQLError
+from accounts.schema import UserType
 
 class TransactionType(DjangoObjectType):
     class Meta:
@@ -16,8 +17,9 @@ class MonthType(DjangoObjectType):
         model = Month
 
 class Query(graphene.ObjectType):
+    user = graphene.Field(UserType, user_id=graphene.Int())
     transactions = graphene.List(TransactionType)
-    categories = graphene.List(CategoryType)
+    categories = graphene.List(CategoryType, search=graphene.String())
     months = graphene.List(MonthType)
 
     def resolve_transactions(self, info, **kwargs):
@@ -31,16 +33,22 @@ class Query(graphene.ObjectType):
 
 class CreateTransaction(graphene.Mutation):
     transaction = graphene.Field(TransactionType)
+    category = graphene.Field(CategoryType)
+    user = graphene.Field(UserType)
 
     class Arguments:
         amount = graphene.Int()
         description = graphene.String()
+        category_id = graphene.Int(required=True)
 
-    def mutate(self, info, amount, description):
+    def mutate(self, info, amount, description, category_id):
         user =  info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        transaction = Transaction(amount=amount, description=description, user=user)
+        category = Category.objects.get(id=category_id)
+        if not category:
+            raise GraphQLError("Can't find category with given category id.")
+        transaction = Transaction(amount=amount, description=description, user=user, category=category)
         transaction.save()
         return CreateTransaction(transaction=transaction)
 
@@ -78,6 +86,7 @@ class DeleteTransaction(graphene.Mutation):
 
 class CreateCategory(graphene.Mutation):
     category = graphene.Field(CategoryType)
+    user = graphene.Field(UserType)
 
     class Arguments:
         name = graphene.String()

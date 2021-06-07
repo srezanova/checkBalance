@@ -12,7 +12,10 @@ class Query(graphene.ObjectType):
     me = graphene.Field(UserType)
 
     def resolve_user(self, info, id):
-        return get_user_model().objects.get(id=id)
+        user = get_user_model().objects.get(pk=id)
+        if info.context.user.id != id:
+            raise GraphQLError('Not authorized to access other users')
+        return user
 
     def resolve_me(self, info):
         user = info.context.user
