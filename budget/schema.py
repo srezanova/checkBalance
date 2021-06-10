@@ -17,19 +17,27 @@ class MonthType(DjangoObjectType):
         model = Month
 
 class Query(graphene.ObjectType):
-    user = graphene.Field(UserType, user_id=graphene.Int())
     transactions = graphene.List(TransactionType)
-    categories = graphene.List(CategoryType, search=graphene.String())
+    categories = graphene.List(CategoryType)
     months = graphene.List(MonthType)
 
     def resolve_transactions(self, info, **kwargs):
-        return Transaction.objects.all()
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+        return Transaction.objects.filter(user=user)
 
     def resolve_categories(self, info, **kwargs):
-        return Category.objects.all()
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+        return Category.objects.filter(user=user)
 
     def resolve_months(self, info, **kwargs):
-        return Month.objects.all()
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+        return Month.objects.filter(user=user)
 
 class CreateTransaction(graphene.Mutation):
     transaction = graphene.Field(TransactionType)
@@ -37,15 +45,15 @@ class CreateTransaction(graphene.Mutation):
     user = graphene.Field(UserType)
 
     class Arguments:
-        amount = graphene.Int()
-        description = graphene.String()
-        category_id = graphene.Int(required=True)
+        amount = graphene.NonNull(graphene.Int)
+        description = graphene.NonNull(graphene.String)
+        category_id = graphene.NonNull(graphene.Int)
 
     def mutate(self, info, amount, description, category_id):
-        user =  info.context.user
+        user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        category = Category.objects.get(id=category_id)
+        category = Category.objects.get(id=category_id, user=user)
         if not category:
             raise GraphQLError("Can't find category with given category id.")
         transaction = Transaction(amount=amount, description=description, user=user, category=category)
@@ -57,16 +65,19 @@ class UpdateTransaction(graphene.Mutation):
 
     class Arguments:
         transaction_id = graphene.Int(required=True)
-        amount = graphene.Int()
-        description = graphene.String()
+        amount = graphene.NonNull(graphene.Int)
+        description = graphene.NonNull(graphene.String)
+        category_id = graphene.Int(required=False)
 
-    def mutate(self, info, transaction_id, amount, description):
-        user =  info.context.user
+    def mutate(self, info, transaction_id, amount, description, category_id):
+        user = info.context.user
         transaction = Transaction.objects.get(id=transaction_id)
         if transaction.user != user:
             raise GraphQLError('Not permitted to update this transaction.')
         transaction.amount = amount
         transaction.description = description
+        transaction.category_id = category_id
+
         transaction.save()
         return UpdateTransaction(transaction=transaction)
 
@@ -77,7 +88,7 @@ class DeleteTransaction(graphene.Mutation):
         transaction_id = graphene.Int(required=True)
 
     def mutate(self, info, transaction_id):
-        user =  info.context.user
+        user = info.context.user
         transaction = Transaction.objects.get(id=transaction_id)
         if transaction.user != user:
             raise GraphQLError('Not permitted to delete this transaction.')
@@ -93,12 +104,15 @@ class CreateCategory(graphene.Mutation):
         group = graphene.String()
     
     def mutate(self, info, name, group):
-        user =  info.context.user
+        user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
         category = Category(name=name, group=group, user=user)
         category.save()
         return CreateCategory(category=category)
+
+class UpdateCategory(graphene.Mutation):
+    pass
 
 class Mutation(graphene.ObjectType):
     create_transaction = CreateTransaction.Field()
