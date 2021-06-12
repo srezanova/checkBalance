@@ -2,7 +2,11 @@ import graphene
 from graphene_django import DjangoObjectType, DjangoListField
 from .models import Transaction, Category, Month
 from graphql import GraphQLError
-from accounts.schema import UserType
+from users.models import CustomUser
+
+class UserType(DjangoObjectType):
+    class Meta:
+        model = CustomUser
 
 class TransactionType(DjangoObjectType):
     class Meta:
@@ -145,22 +149,20 @@ class DeleteCategory(graphene.Mutation):
         return DeleteCategory(category_id=category_id)
 
 class CreateMonth(graphene.Mutation):
-    transaction = graphene.Field(TransactionType)
-    user = graphene.Field(UserType)
     month = graphene.Field(MonthType)
+    user = graphene.Field(UserType)
 
     class Arguments:
         year = graphene.String()
         month = graphene.String()
         start_month_savings = graphene.Int()
         start_month_balance = graphene.Int()
-        user_id = graphene.Int()
 
-    def mutate(self, info, year, month, start_month_savings, start_month_balance, user_id):
+    def mutate(self, info, year, month, start_month_savings, start_month_balance):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        month = Month(year=year, month=month, start_month_balance=start_month_balance, start_month_savings=start_month_savings, user_id=user_id)
+        month = Month(year=year, month=month, start_month_balance=start_month_balance, start_month_savings=start_month_savings, user=user)
         month.save()
         return CreateMonth(month=month)
 
