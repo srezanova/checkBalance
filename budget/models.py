@@ -19,7 +19,7 @@ class Transaction(models.Model):
     created = models.DateField(auto_now_add = True)
     amount = models.IntegerField()
     description = models.CharField(null = True, blank = True, max_length = 100)
-    category = models.ForeignKey(Category, related_name = 'categories', null=True, on_delete = models.SET_NULL)
+    category = models.ForeignKey(Category, related_name = 'transactions', null=True, on_delete = models.SET_NULL)
 
 class Month(models.Model):
     YEAR_CHOICES = (

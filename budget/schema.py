@@ -1,5 +1,5 @@
 import graphene
-from graphene_django import DjangoObjectType, DjangoListField
+from graphene_django import DjangoObjectType, DjangoListField, DjangoConnectionField
 from .models import Transaction, Category, Month
 from graphql import GraphQLError
 from users.models import CustomUser
@@ -13,25 +13,34 @@ class TransactionType(DjangoObjectType):
         model = Transaction
 
 class CategoryType(DjangoObjectType):
+    transactions = graphene.List(TransactionType)
+
     class Meta:
         model = Category
+        use_connection = True
 
+    def resolve_transactions(root, info, **kwargs):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+        return info.context.transactions_by_category_id_loader.load(root.id)
+        
 class MonthType(DjangoObjectType):
     class Meta:
         model = Month
 
 class Query(graphene.ObjectType):
-    transactions = graphene.List(TransactionType)
-    categories = graphene.List(CategoryType)
+    categories = DjangoConnectionField(CategoryType)
     months = graphene.List(MonthType)
+    transactions = graphene.List(TransactionType)
 
-    def resolve_transactions(self, info, **kwargs):
+    def resolve_transactions(root, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
         return Transaction.objects.filter(user=user)
 
-    def resolve_categories(self, info, **kwargs):
+    def resolve_categories(root, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
