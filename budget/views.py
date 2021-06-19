@@ -1,6 +1,6 @@
 from django.utils.functional import cached_property
 from graphene_django.views import GraphQLView
-from .loaders import TransactionByCategoryLoader
+from .loaders import TransactionByCategoryLoader, CategoryByTransactionLoader
 
 class GQLContext:
 
@@ -14,6 +14,10 @@ class GQLContext:
     @cached_property
     def transactions_by_category_id_loader(self):
         return TransactionByCategoryLoader()
+
+    @cached_property
+    def  categories_by_transaction_ids_loader(self):
+        return CategoryByTransactionLoader()
 
 class CustomGraphQLView(GraphQLView):
 

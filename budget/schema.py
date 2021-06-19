@@ -9,10 +9,24 @@ class UserType(DjangoObjectType):
         model = CustomUser
 
 class TransactionType(DjangoObjectType):
+    '''
+    Get category inside any transaction
+    '''
+    categories = graphene.List('budget.schema.CategoryType')
     class Meta:
         model = Transaction
+        use_connection = True
+    
+    def resolve_categories(root, info, **kwargs):
+        user = info.contex.user
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+        return info.contex.categories_by_transaction_ids_loader.load(root.id)
 
 class CategoryType(DjangoObjectType):
+    '''
+    Get transactions inside any category
+    '''
     transactions = graphene.List(TransactionType)
 
     class Meta:
@@ -30,9 +44,10 @@ class MonthType(DjangoObjectType):
         model = Month
 
 class Query(graphene.ObjectType):
+
     categories = DjangoConnectionField(CategoryType)
     months = graphene.List(MonthType)
-    transactions = graphene.List(TransactionType)
+    transactions = DjangoConnectionField(TransactionType)
 
     def resolve_transactions(root, info, **kwargs):
         user = info.context.user
