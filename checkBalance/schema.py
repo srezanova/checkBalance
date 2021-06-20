@@ -1,10 +1,12 @@
 import graphene
-
-import budget.schema
 from graphene_django import DjangoObjectType, DjangoListField
-
 from graphql_auth.schema import UserQuery, MeQuery
 from graphql_auth import mutations
+
+import budget.schema
+import budget.mutations
+
+
 
 class AuthMutation(graphene.ObjectType):
     register = mutations.Register.Field()
@@ -27,7 +29,7 @@ class AuthMutation(graphene.ObjectType):
 class Query(UserQuery, MeQuery, budget.schema.Query, graphene.ObjectType):
     pass
 
-class Mutation(AuthMutation, budget.schema.Mutation, graphene.ObjectType):
+class Mutation(AuthMutation, budget.mutations.Mutation, graphene.ObjectType):
    pass
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
