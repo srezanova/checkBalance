@@ -1,13 +1,19 @@
 import graphene
 from graphql import GraphQLError
 
-from users.models import CustomUser
 from .models import Transaction, Category, Month
 from .schema import UserType, TransactionType, CategoryType, MonthType
 
 
 
 class CreateTransaction(graphene.Mutation):
+    '''
+    Create a transaction.
+
+    Takes arguments: amount, description, category_id.
+
+    User can access only personal categories.
+    '''
     transaction = graphene.Field(TransactionType)
     category = graphene.Field(CategoryType)
     user = graphene.Field(UserType)
@@ -24,27 +30,45 @@ class CreateTransaction(graphene.Mutation):
         category = Category.objects.get(id=category_id, user=user)
         if not category:
             raise GraphQLError("Can't find category with given category id.")
-        transaction = Transaction(amount=amount, description=description, user=user, category=category)
+        transaction = Transaction(
+            amount=amount,
+            description=description,
+            user=user,
+            category=category)
         transaction.save()
         return CreateTransaction(transaction=transaction)
 
+class TransactionInput(graphene.InputObjectType):
+    amount = graphene.Int()
+    description = graphene.String()
+    category_id = graphene.Int()
+
 class UpdateTransaction(graphene.Mutation):
+    '''
+    Updates arguments of transaction.
+
+    User can update only personal transactions with personal categories.
+    '''
     transaction = graphene.Field(TransactionType)
 
     class Arguments:
         transaction_id = graphene.Int(required=True)
-        amount = graphene.NonNull(graphene.Int)
-        description = graphene.NonNull(graphene.String)
-        category_id = graphene.Int(required=False)
+        transaction_data = TransactionInput(required=True)
 
-    def mutate(self, info, transaction_id, amount, description, category_id):
+    def mutate(self, info, transaction_id, transaction_data=None):
         user = info.context.user
         transaction = Transaction.objects.get(id=transaction_id)
         if transaction.user != user:
             raise GraphQLError('Not permitted to update this transaction.')
-        transaction.amount = amount
-        transaction.description = description
-        transaction.category_id = category_id
+        if transaction_data.amount is not None:
+            transaction.amount = transaction_data.amount
+        if transaction_data.description is not None:
+            transaction.description = transaction_data.description
+        if transaction_data.category_id is not None:
+            category = Category.objects.get(id=transaction_data.category_id)
+            if category.user != user:
+                raise GraphQLError("Can't find category with given category id.")
+            transaction.category_id = transaction_data.category_id
 
         transaction.save()
         return UpdateTransaction(transaction=transaction)
@@ -70,7 +94,7 @@ class CreateCategory(graphene.Mutation):
     class Arguments:
         name = graphene.String()
         group = graphene.String()
-    
+
     def mutate(self, info, name, group):
         user = info.context.user
         if user.is_anonymous:
@@ -86,7 +110,7 @@ class UpdateCategory(graphene.Mutation):
         category_id = graphene.Int(required=True)
         name = graphene.String()
         group = graphene.NonNull(graphene.String)
-    
+
     def mutate(self, info, name, group, category_id):
         user = info.context.user
         category = Category.objects.get(id=category_id)
@@ -94,7 +118,7 @@ class UpdateCategory(graphene.Mutation):
             raise GraphQLError('Not permitted to update this category')
         category.name = name
         category.group = group
-        
+
         category.save()
         return UpdateCategory(category=category)
 
@@ -126,7 +150,12 @@ class CreateMonth(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        month = Month(year=year, month=month, start_month_balance=start_month_balance, start_month_savings=start_month_savings, user=user)
+        month = Month(
+            year=year,
+            month=month,
+            start_month_balance=start_month_balance,
+            start_month_savings=start_month_savings,
+            user=user)
         month.save()
         return CreateMonth(month=month)
 
@@ -159,5 +188,3 @@ class Mutation(graphene.ObjectType):
     delete_category = DeleteCategory.Field()
     create_month = CreateMonth.Field()
     update_month = UpdateMonth.Field()
-
-
