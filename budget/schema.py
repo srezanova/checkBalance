@@ -25,9 +25,7 @@ class MonthType(DjangoObjectType):
     class Meta:
         model = Month
 
-
 class Query(graphene.ObjectType):
-
     categories = graphene.List(CategoryType)
     months = graphene.List(MonthType)
     transactions = graphene.List(TransactionType)

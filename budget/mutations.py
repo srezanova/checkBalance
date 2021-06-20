@@ -6,6 +6,16 @@ from .schema import UserType, TransactionType, CategoryType, MonthType
 
 
 
+class TransactionInput(graphene.InputObjectType):
+    '''
+    Argument for our mutation classes.
+    Defines fields allowing user to add or change the data.
+    '''
+    transaction_id = graphene.ID()
+    amount = graphene.Int()
+    description = graphene.String()
+    category_id = graphene.Int()
+
 class CreateTransaction(graphene.Mutation):
     '''
     Create a transaction.
@@ -15,49 +25,43 @@ class CreateTransaction(graphene.Mutation):
     User can access only personal categories.
     '''
     transaction = graphene.Field(TransactionType)
-    category = graphene.Field(CategoryType)
-    user = graphene.Field(UserType)
 
     class Arguments:
-        amount = graphene.NonNull(graphene.Int)
-        description = graphene.NonNull(graphene.String)
-        category_id = graphene.NonNull(graphene.Int)
+        transaction_data = TransactionInput(required=True)
 
-    def mutate(self, info, amount, description, category_id):
+    @staticmethod
+    def mutate(root, info, transaction_data):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        category = Category.objects.get(id=category_id, user=user)
+        category = Category.objects.get(id=transaction_data.category_id, user=user)
         if not category:
             raise GraphQLError("Can't find category with given category id.")
-        transaction = Transaction(
-            amount=amount,
-            description=description,
+        transaction_instance = Transaction(
+            amount=transaction_data.amount,
+            description=transaction_data.description,
             user=user,
-            category=category)
-        transaction.save()
-        return CreateTransaction(transaction=transaction)
-
-class TransactionInput(graphene.InputObjectType):
-    amount = graphene.Int()
-    description = graphene.String()
-    category_id = graphene.Int()
+            category=category,
+            )
+        transaction_instance.save()
+        return CreateTransaction(transaction=transaction_instance)
 
 class UpdateTransaction(graphene.Mutation):
     '''
-    Updates arguments of transaction.
+    Updates transaction data.
+
+    Takes arguments: transaction_id - required! Data user wants to change (all optional): amount, description, category_id.
 
     User can update only personal transactions with personal categories.
     '''
     transaction = graphene.Field(TransactionType)
 
     class Arguments:
-        transaction_id = graphene.Int(required=True)
         transaction_data = TransactionInput(required=True)
 
-    def mutate(self, info, transaction_id, transaction_data=None):
+    def mutate(root, info, transaction_data=None):
         user = info.context.user
-        transaction = Transaction.objects.get(id=transaction_id)
+        transaction = Transaction.objects.get(pk=transaction_data.transaction_id)
         if transaction.user != user:
             raise GraphQLError('Not permitted to update this transaction.')
         if transaction_data.amount is not None:
@@ -74,20 +78,32 @@ class UpdateTransaction(graphene.Mutation):
         return UpdateTransaction(transaction=transaction)
 
 class DeleteTransaction(graphene.Mutation):
-    transaction_id =  graphene.Int()
+    '''
+    Delete transactions
+
+    Takes argument: transaction_id - required!
+    '''
+    transaction =  graphene.Field(TransactionType)
 
     class Arguments:
         transaction_id = graphene.Int(required=True)
 
-    def mutate(self, info, transaction_id):
+    def mutate(root, info, transaction_id):
         user = info.context.user
-        transaction = Transaction.objects.get(id=transaction_id)
-        if transaction.user != user:
+        transaction_instance = Transaction.objects.get(id=transaction_id)
+        if transaction_instance.user != user:
             raise GraphQLError('Not permitted to delete this transaction.')
-        transaction.delete()
-        return DeleteTransaction(transaction_id=transaction_id)
+        transaction_instance.delete()
+        return None
 
 class CreateCategory(graphene.Mutation):
+    '''
+    Create a category.
+
+    Takes arguments: amount, description, category_id.
+
+    User can access only personal categories.
+    '''
     category = graphene.Field(CategoryType)
     user = graphene.Field(UserType)
 
