@@ -6,22 +6,25 @@ import graphene_django_optimizer as gql_optimizer
 from .models import Transaction, Category, Month
 from users.models import CustomUser
 
-
 class UserType(DjangoObjectType):
     class Meta:
         model = CustomUser
 
 class TransactionType(DjangoObjectType):
+    id = graphene.ID(source='pk', required=True)
+
     class Meta:
         model = Transaction
         interfaces = (graphene.relay.Node, )
 
 class CategoryType(DjangoObjectType):
+    id = graphene.ID(source='pk', required=True)
     class Meta:
         model = Category
         interfaces = (graphene.relay.Node, )
 
 class MonthType(DjangoObjectType):
+    id = graphene.ID(source='pk', required=True)
     class Meta:
         model = Month
 
