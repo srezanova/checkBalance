@@ -5,10 +5,9 @@ from django.conf import settings
 from graphene_django.views import GraphQLView
 from django.views.decorators.csrf import csrf_exempt
 
-import debug_toolbar
+# import debug_toolbar
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
-    path('__debug__/', include(debug_toolbar.urls)),
+    # path('__debug__/', include(debug_toolbar.urls)),
 ]

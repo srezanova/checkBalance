@@ -14,13 +14,6 @@ class Category(models.Model):
     def __str__(self):
         return f'{self.name} {self.user} {self.group}'
 
-class Transaction(models.Model):
-    user = models.ForeignKey(CustomUser, null=True, on_delete = models.CASCADE)
-    created = models.DateField(auto_now_add = True)
-    amount = models.IntegerField()
-    description = models.CharField(null = True, blank = True, max_length = 100)
-    category = models.ForeignKey(Category, related_name = 'transactions', null=True, on_delete = models.SET_NULL)
-
 class Month(models.Model):
     YEAR_CHOICES = (
         ('2021', '2021'),
@@ -33,7 +26,7 @@ class Month(models.Model):
         ('March', 'March'),
         ('April', 'April'),
         ('May', 'May'),
-        ('June', 'June'), 
+        ('June', 'June'),
         ('July', 'July'),
         ('August', 'August'),
         ('September', 'September'),
@@ -41,10 +34,17 @@ class Month(models.Model):
         ('November', 'November'),
         ('December', 'December')
     )
-    
+
     user = models.ForeignKey(CustomUser, null=True, on_delete = models.CASCADE)
     year = models.CharField(blank = False, choices = YEAR_CHOICES, max_length = 4)
     month = models.CharField(blank = False, choices =  MONTH_CHOICES, max_length = 15)
     start_month_savings = models.IntegerField()
     start_month_balance = models.IntegerField()
 
+class Transaction(models.Model):
+    user = models.ForeignKey(CustomUser, null=True, on_delete = models.CASCADE)
+    created = models.DateField(auto_now_add = True)
+    amount = models.IntegerField()
+    description = models.CharField(null = True, blank = True, max_length = 100)
+    category = models.ForeignKey(Category, related_name = 'transactions', null=True, on_delete = models.SET_NULL)
+    month = models.ForeignKey(Month, related_name='transactions', null=True, on_delete = models.SET_NULL)
