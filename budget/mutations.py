@@ -23,7 +23,7 @@ class CreateTransaction(graphene.Mutation):
 
     Takes arguments: amount, description, category_id, month_id.
 
-    User can access only personal categories.
+    User can access only personal categories/months.
     '''
     transaction = graphene.Field(TransactionType)
 
@@ -52,6 +52,34 @@ class CreateTransaction(graphene.Mutation):
             )
         transaction_instance.save()
         return CreateTransaction(transaction=transaction_instance)
+
+class CreateManyTransactions(graphene.Mutation):
+    '''
+    Creates bulk of transactions.
+
+    Takes arguments: amount, description, category_id, month_id.
+
+    User can access only personal categories/months.
+    '''
+    class Input:
+       transactions = graphene.List(TransactionInput)
+
+    transactions = graphene.List(lambda: TransactionType)
+
+    @staticmethod
+    def mutate(root, info, **kwargs):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+
+        transactions = [Transaction.objects.create(
+            amount=transaction.amount,
+            description=transaction.description,
+            category_id=transaction.category_id,
+            month_id=transaction.month_id,
+            user=user,
+            ) for transaction in kwargs.get('transactions')]
+        return CreateManyTransactions(transactions=transactions)
 
 class UpdateTransaction(graphene.Mutation):
     '''
@@ -267,6 +295,7 @@ class UpdateMonth(graphene.Mutation):
 
 class Mutation(graphene.ObjectType):
     create_transaction = CreateTransaction.Field()
+    create_many_transactions = CreateManyTransactions.Field()
     update_transaction = UpdateTransaction.Field()
     delete_transaction = DeleteTransaction.Field()
     create_category = CreateCategory.Field()
