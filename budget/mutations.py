@@ -164,6 +164,7 @@ class CreateCategory(graphene.Mutation):
     Takes arguments: amount, description, category_id.
 
     User can access only personal categories.
+    User can't create a category with name that already exists.
     '''
     category = graphene.Field(CategoryType)
 
@@ -175,7 +176,11 @@ class CreateCategory(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        if Category.objects.filter(name=category_data.name, user=user).exists():
+        if Category.objects.filter(
+            name=category_data.name,
+            group=category_data.group,
+            user=user
+            ).exists():
             raise GraphQLError('Category with this name already exists.')
         category_instance = Category(
             name = category_data.name,
@@ -193,6 +198,7 @@ class UpdateCategory(graphene.Mutation):
     All optional: name, group.
 
     User can update only personal categories.
+    User can't update to existing category.
     '''
     category = graphene.Field(CategoryType)
 
@@ -209,12 +215,27 @@ class UpdateCategory(graphene.Mutation):
             )
         if category_instance.user != user:
             raise GraphQLError('Not permitted to update this category')
+        if Category.objects.filter(
+            name=category_data.name,
+            group=category_instance.group,
+            user=user
+            ).exists():
+            raise GraphQLError('Category with this name already exists.')
+        if Category.objects.filter(
+            name=category_instance.name,
+            group=category_data.group,
+            user=user
+            ).exists():
+            raise GraphQLError('Category with this name already exists.')
         if category_data.name is not None:
             category_instance.name = category_data.name
         if category_data.group is not None:
             category_instance.group = category_data.group
         category_instance.save()
         return UpdateCategory(category=category_instance)
+
+
+
 
 class DeleteCategory(graphene.Mutation):
     '''
@@ -251,6 +272,8 @@ class CreateMonth(graphene.Mutation):
     Creates month.
 
     Takes arguments: year, month, start_month_savings, start_month_balance.
+
+    User can't create month that already exists.
     '''
     month = graphene.Field(MonthType)
 
