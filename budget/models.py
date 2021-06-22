@@ -38,8 +38,8 @@ class Month(models.Model):
     user = models.ForeignKey(CustomUser, null=True, on_delete = models.CASCADE)
     year = models.CharField(blank = False, choices = YEAR_CHOICES, max_length = 4)
     month = models.CharField(blank = False, choices =  MONTH_CHOICES, max_length = 15)
-    start_month_savings = models.IntegerField()
-    start_month_balance = models.IntegerField()
+    start_month_savings = models.IntegerField(blank=True, null=True)
+    start_month_balance = models.IntegerField(blank=True, null=True)
 
 class Transaction(models.Model):
     user = models.ForeignKey(CustomUser, null=True, on_delete = models.CASCADE)

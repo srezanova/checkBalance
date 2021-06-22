@@ -71,14 +71,22 @@ class CreateManyTransactions(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-
-        transactions = [Transaction.objects.create(
-            amount=transaction.amount,
-            description=transaction.description,
-            category_id=transaction.category_id,
-            month_id=transaction.month_id,
-            user=user,
-            ) for transaction in kwargs.get('transactions')]
+        transactions = []
+        for transaction in kwargs.get('transactions'):
+            category = Category.objects.get(id=transaction.category_id)
+            if category.user != user:
+                raise GraphQLError("Can't find category with given category_id.")
+            month = Month.objects.get(id=transaction.month_id, user=user)
+            if month.user != user:
+                raise GraphQLError("Can't find month with given month_id.")
+            transaction = Transaction.objects.create(
+                amount=transaction.amount,
+                description=transaction.description,
+                category_id=transaction.category_id,
+                month_id=transaction.month_id,
+                user=user,
+                )
+            transactions.append(transaction)
         return CreateManyTransactions(transactions=transactions)
 
 class UpdateTransaction(graphene.Mutation):
@@ -167,6 +175,8 @@ class CreateCategory(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
+        if Category.objects.filter(name=category_data.name, user=user).exists():
+            raise GraphQLError('Category with this name already exists.')
         category_instance = Category(
             name = category_data.name,
             group = category_data.group,
@@ -252,6 +262,12 @@ class CreateMonth(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
+        if Month.objects.filter(
+            month=month_data.month,
+            year = month_data.year,
+            user=user
+            ).exists():
+            raise GraphQLError('Created month already exists.')
         month_instance = Month(
             year=month_data.year,
             month=month_data.month,
