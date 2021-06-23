@@ -35,20 +35,20 @@ class CreateTransaction(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        category = Category.objects.get(
-            id=transaction_data.category_id,
-            user=user)
-        if not category:
-            raise GraphQLError("Can't find category with given category_id.")
-        month = Month.objects.get(id=transaction_data.month_id, user=user)
-        if not month:
-            raise GraphQLError("Can't find month with given month_id.")
+        if transaction_data.category_id is not None:
+            category = Category.objects.get(id=transaction_data.category_id)
+            if category.user != user:
+                raise GraphQLError("Can't find category with given category_id.")
+        if transaction_data.month_id is not None:
+            month = Month.objects.get(id=transaction_data.month_id, user=user)
+            if not month:
+                raise GraphQLError("Can't find month with given month_id.")
         transaction_instance = Transaction(
             amount=transaction_data.amount,
             description=transaction_data.description,
             user=user,
-            category=category,
-            month=month,
+            category_id=transaction_data.category_id,
+            month_id=transaction_data.month_id,
             )
         transaction_instance.save()
         return CreateTransaction(transaction=transaction_instance)
@@ -73,12 +73,14 @@ class CreateManyTransactions(graphene.Mutation):
             raise GraphQLError('You need to be logged in.')
         transactions = []
         for transaction in kwargs.get('transactions'):
-            category = Category.objects.get(id=transaction.category_id)
-            if category.user != user:
-                raise GraphQLError("Can't find category with given category_id.")
-            month = Month.objects.get(id=transaction.month_id, user=user)
-            if month.user != user:
-                raise GraphQLError("Can't find month with given month_id.")
+            if transaction.category_id is not None:
+                category = Category.objects.get(id=transaction.category_id)
+                if category.user != user:
+                    raise GraphQLError("Can't find category with given category_id.")
+            if transaction.month_id is not None:
+                month = Month.objects.get(id=transaction.month_id, user=user)
+                if month.user != user:
+                    raise GraphQLError("Can't find month with given month_id.")
             transaction = Transaction.objects.create(
                 amount=transaction.amount,
                 description=transaction.description,
