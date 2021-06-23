@@ -14,8 +14,8 @@ class TransactionInput(graphene.InputObjectType):
     transaction_id = graphene.ID()
     amount = graphene.Int()
     description = graphene.String()
-    category_id = graphene.Int()
-    month_id = graphene.Int()
+    category_id = graphene.ID()
+    month_id = graphene.ID()
 
 class CreateTransaction(graphene.Mutation):
     '''
@@ -330,8 +330,8 @@ class UpdateMonth(graphene.Mutation):
 
 class PlanInput(graphene.InputObjectType):
     plan_id = graphene.ID()
-    month_id = graphene.Int(required=True)
-    category_id = graphene.Int(required=True)
+    month_id = graphene.ID(required=True)
+    category_id = graphene.ID(required=True)
     planned_amount = graphene.Int(required=True)
 
 class CreatePlan(graphene.Mutation):
