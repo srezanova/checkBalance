@@ -35,16 +35,22 @@ class Month(models.Model):
         ('December', 'December')
     )
 
-    user = models.ForeignKey(CustomUser, null=True, on_delete = models.CASCADE)
-    year = models.CharField(blank = False, choices = YEAR_CHOICES, max_length = 4)
-    month = models.CharField(blank = False, choices =  MONTH_CHOICES, max_length = 15)
+    user = models.ForeignKey(CustomUser, null=True, on_delete=models.CASCADE)
+    year = models.CharField(blank=False, choices=YEAR_CHOICES, max_length=4)
+    month = models.CharField(blank=False, choices=MONTH_CHOICES, max_length=15)
     start_month_savings = models.IntegerField(blank=True, null=True)
     start_month_balance = models.IntegerField(blank=True, null=True)
 
 class Transaction(models.Model):
-    user = models.ForeignKey(CustomUser, null=True, on_delete = models.CASCADE)
+    user = models.ForeignKey(CustomUser, null=True, on_delete=models.CASCADE)
     created = models.DateField(auto_now_add = True)
     amount = models.IntegerField()
-    description = models.CharField(null = True, blank = True, max_length = 100)
-    category = models.ForeignKey(Category, related_name = 'transactions', null=True, on_delete = models.SET_NULL)
-    month = models.ForeignKey(Month, related_name='transactions', null=True, on_delete = models.SET_NULL)
+    description = models.CharField(null=True, blank=True, max_length=100)
+    category = models.ForeignKey(Category, related_name='transactions', null=True, on_delete=models.SET_NULL)
+    month = models.ForeignKey(Month, related_name='transactions', null=True, on_delete=models.SET_NULL)
+
+class Plan(models.Model):
+    user = models.ForeignKey(CustomUser, null=True, on_delete=models.CASCADE)
+    planned_amount = models.IntegerField(blank=True, null=True)
+    category = models.ForeignKey(Category, blank=False, related_name='plan', null=True, on_delete=models.SET_NULL)
+    month = models.ForeignKey(Month, blank=False, related_name='plan', null=True, on_delete=models.SET_NULL)

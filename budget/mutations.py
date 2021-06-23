@@ -1,8 +1,8 @@
 import graphene
 from graphql import GraphQLError
 
-from .models import Transaction, Category, Month
-from .schema import UserType, TransactionType, CategoryType, MonthType
+from .models import Transaction, Category, Month, Plan
+from .schema import UserType, TransactionType, CategoryType, MonthType, PlanType
 
 
 
@@ -160,10 +160,7 @@ class CategoryInput(graphene.InputObjectType):
 class CreateCategory(graphene.Mutation):
     '''
     Creates a category.
-
     Takes arguments: amount, description, category_id.
-
-    User can access only personal categories.
     User can't create a category with name that already exists.
     '''
     category = graphene.Field(CategoryType)
@@ -233,9 +230,6 @@ class UpdateCategory(graphene.Mutation):
             category_instance.group = category_data.group
         category_instance.save()
         return UpdateCategory(category=category_instance)
-
-
-
 
 class DeleteCategory(graphene.Mutation):
     '''
@@ -332,6 +326,76 @@ class UpdateMonth(graphene.Mutation):
         month_instance.save()
         return UpdateMonth(month=month_instance)
 
+class PlanInput(graphene.InputObjectType):
+    plan_id = graphene.ID()
+    month_id = graphene.Int(required=True)
+    category_id = graphene.Int(required=True)
+    planned_amount = graphene.Int(required=True)
+
+class CreatePlan(graphene.Mutation):
+    '''
+    Creates plan for category per month.
+
+    Required arguments: month_id, category_id, planned_amount.
+
+    User can access only personal categories/months.
+
+    You can create only one plan per category+month.
+    '''
+    plan = graphene.Field(PlanType)
+
+    class Arguments:
+        plan_data = PlanInput(required=True)
+
+    @staticmethod
+    def mutate(root, info, plan_data):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+        category = Category.objects.get(id=plan_data.category_id)
+        if category.user != user:
+            raise GraphQLError("Can't find category with given category_id.")
+        month = Month.objects.get(id=plan_data.month_id, user=user)
+        if not month:
+            raise GraphQLError("Can't find month with given month_id.")
+        if Plan.objects.filter(
+            category_id=plan_data.category_id,
+            month_id=plan_data.month_id,
+            user=user
+            ).exists():
+            raise GraphQLError('Created plan already exists.')
+
+        plan_instance = Plan(
+            planned_amount=plan_data.planned_amount,
+            user=user,
+            category_id=plan_data.category_id,
+            month_id=plan_data.month_id,
+            )
+        plan_instance.save()
+        return CreatePlan(plan=plan_instance)
+
+class UpdatePlan(graphene.Mutation):
+        '''
+        Updates only amount.
+        '''
+        plan = graphene.Field(PlanType)
+
+        class Arguments:
+            plan_id = graphene.ID(required=True)
+            planned_amount = graphene.Int(required=True)
+
+        @staticmethod
+        def mutate(root, info, plan_id, planned_amount):
+            user = info.context.user
+            if user.is_anonymous:
+                raise GraphQLError('You need to be logged in.')
+            plan = Plan.objects.get(id=plan_id)
+            if plan.user != user:
+                raise GraphQLError('Not permitted to update this plan.')
+            plan.planned_amount = planned_amount
+            plan.save()
+            return UpdatePlan(plan=plan)
+
 class Mutation(graphene.ObjectType):
     create_transaction = CreateTransaction.Field()
     create_many_transactions = CreateManyTransactions.Field()
@@ -342,3 +406,5 @@ class Mutation(graphene.ObjectType):
     delete_category = DeleteCategory.Field()
     create_month = CreateMonth.Field()
     update_month = UpdateMonth.Field()
+    create_plan = CreatePlan.Field()
+    update_plan = UpdatePlan.Field()
