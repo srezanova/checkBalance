@@ -10,6 +10,8 @@ settings.py
 .vscode
 password ssh
 *.pub
+/htmlcov
+/.pytest_cache
 
 # Distribution / packaging
 .Python
@@ -129,6 +131,7 @@ pip-delete-this-directory.txt
 .cache
 nosetests.xml
 coverage.xml
+.coveragerc
 
 # Translations
 *.mo

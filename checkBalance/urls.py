@@ -8,6 +8,6 @@ from django.views.decorators.csrf import csrf_exempt
 # import debug_toolbar
 
 urlpatterns = [
-    path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True)), name='graphql'),
     # path('__debug__/', include(debug_toolbar.urls)),
 ]

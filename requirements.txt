@@ -62,7 +62,6 @@ python-dotenv==0.17.1
 pytz
 requests==2.25.1
 Rx==1.6.1
-sentry-sdk==1.1.0
 simplejson==3.17.2
 singledispatch==3.6.2
 six==1.15.0
