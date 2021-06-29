@@ -4,6 +4,10 @@ from django.contrib.auth.models import (
 )
 
 class UserManager(BaseUserManager):
+    """
+    Custom user model manager where email is the unique identifiers
+    for authentication instead of usernames.
+    """
     def create_user(self, email, password=None):
         if not email:
             raise ValueError('Users must have an email address')
