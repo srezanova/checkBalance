@@ -49,7 +49,6 @@ lxml==4.6.3
 mccabe==0.6.1
 misaka==2.1.1
 mixer==7.1.2
-numpy==1.20.3
 packaging==20.9
 Pillow==8.2.0
 pluggy==0.13.1
@@ -77,6 +76,4 @@ sqlparse
 text-unidecode==1.3
 toml==0.10.2
 urllib3==1.26.4
-virtualenv==20.4.7
-virtualenv-clone==0.5.4
 wrapt==1.12.1
