@@ -1,5 +1,5 @@
 import graphene
-from graphene_django import DjangoObjectType, DjangoListField, DjangoConnectionField
+from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 import graphene_django_optimizer as gql_optimizer
 

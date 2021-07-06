@@ -2,7 +2,7 @@ import graphene
 from graphql import GraphQLError
 
 from .models import Transaction, Category, Month, Plan
-from .schema import UserType, TransactionType, CategoryType, MonthType, PlanType
+from .schema import TransactionType, CategoryType, MonthType, PlanType
 
 
 
