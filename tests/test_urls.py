@@ -1,8 +1,9 @@
-import pytest
 from django.urls import reverse, resolve
+from django.test import TestCase
 
-class TestUrls:
+
+class UrlModelTest(TestCase):
 
     def test_graphql_url(self):
         path = reverse('graphql')
-        assert resolve(path).view_name == 'graphql'
+        self.assertEqual(resolve(path).view_name,'graphql')

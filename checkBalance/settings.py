@@ -101,9 +101,9 @@ GRAPHENE = {
 
 GRAPH_AUTH = {
     'USER_FIELDS': ('email'),
-    'ONLY_ADMIN_REGISTRATION': False, 
-    'WELCOME_EMAIL_TEMPLATE': None, 
-    'EMAIL_FROM': None 
+    'ONLY_ADMIN_REGISTRATION': False,
+    'WELCOME_EMAIL_TEMPLATE': None,
+    'EMAIL_FROM': None
 }
 
 AUTHENTICATION_BACKENDS = [
@@ -114,8 +114,8 @@ AUTHENTICATION_BACKENDS = [
 GRAPHQL_JWT = {
     "JWT_VERIFY_EXPIRATION": True,
     "JWT_LONG_RUNNING_REFRESH_TOKEN": True,
-    'JWT_EXPIRATION_DELTA': env('JWT_EXPIRATION_DELTA'),
-    'JWT_REFRESH_EXPIRATION_DELTA': env('JWT_REFRESH_EXPIRATION_DELTA'),
+    'JWT_EXPIRATION_DELTA': timedelta(days=30),
+    'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=30),
     "JWT_ALLOW_ANY_CLASSES": [
         "graphql_auth.mutations.Register",
         "graphql_auth.mutations.ObtainJSONWebToken",
@@ -178,4 +178,3 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOWED_ORIGINS = [
     'https://stage.ohnomy.cash',
 ]
-
