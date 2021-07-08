@@ -89,6 +89,14 @@ class BudgetModelTest(TestCase):
             description='test',
         )
 
+        self.transaction1 =Transaction.objects.create(
+            user=self.user,
+            category=self.category,
+            month=self.month,
+            amount=25,
+            description='test1',
+        )
+
     def test_category(self):
         self.assertEqual(self.category.user.email, 'test@test.com')
         self.assertEqual(self.category.name, 'Dogs')
@@ -108,3 +116,6 @@ class BudgetModelTest(TestCase):
         self.assertEqual(self.transaction.category.name, 'Dogs')
         self.assertEqual(self.transaction.amount, 1000)
         self.assertEqual(self.transaction.description, 'test')
+
+    def test_many_to_one_transactions(self):
+        self.assertEqual(self.category.transactions.count(), 2)

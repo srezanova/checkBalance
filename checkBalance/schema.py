@@ -1,5 +1,5 @@
 import graphene
-from graphql_auth.schema import MeQuery
+from graphql_auth.schema import MeQuery, UserQuery
 from graphql_auth import mutations
 
 import budget.schema
@@ -17,7 +17,7 @@ class AuthMutation(graphene.ObjectType):
     revoke_token = mutations.RevokeToken.Field()
 
 
-class Query(MeQuery, budget.schema.Query, graphene.ObjectType):
+class Query(MeQuery, UserQuery, budget.schema.Query, graphene.ObjectType):
     pass
 
 class Mutation(AuthMutation, budget.mutations.Mutation, graphene.ObjectType):
