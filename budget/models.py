@@ -11,9 +11,6 @@ class Category(models.Model):
     name = models.CharField( max_length = 50, blank = False)
     group = models.CharField(blank = False, choices = GROUP_CHOICES, max_length = 7)
 
-    def __str__(self):
-        return f'{self.name} {self.user} {self.group}'
-
 class Month(models.Model):
     YEAR_CHOICES = (
         ('2021', '2021'),
