@@ -26,11 +26,13 @@ class MonthType(DjangoObjectType):
     id = graphene.ID(source='pk', required=True)
     class Meta:
         model = Month
+        interfaces = (graphene.relay.Node, )
 
 class PlanType(DjangoObjectType):
     id = graphene.ID(source='pk', required=True)
     class Meta:
         model = Plan
+        interfaces = (graphene.relay.Node, )
 
 class Query(graphene.ObjectType):
     categories = graphene.List(CategoryType)
@@ -50,13 +52,13 @@ class Query(graphene.ObjectType):
             raise GraphQLError('You need to be logged in.')
         return gql_optimizer.query(Category.objects.filter(user=user), info)
 
-    def resolve_months(self, info, **kwargs):
+    def resolve_months(root, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
         return gql_optimizer.query(Month.objects.filter(user=user), info)
 
-    def resolve_plan(self, info, **kwargs):
+    def resolve_plan(root, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
