@@ -177,4 +177,5 @@ CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOWED_ORIGINS = [
     'https://stage.ohnomy.cash',
+    'http://localhost:3000',
 ]
