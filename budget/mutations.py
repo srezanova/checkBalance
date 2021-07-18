@@ -18,13 +18,6 @@ class TransactionInput(graphene.InputObjectType):
     month_id = graphene.ID()
 
 class CreateTransaction(graphene.Mutation):
-    '''
-    Creates a transaction.
-
-    Takes arguments: amount, description, category_id, month_id.
-
-    User can access only personal categories/months.
-    '''
     transaction = graphene.Field(TransactionType)
 
     class Arguments:
@@ -54,13 +47,6 @@ class CreateTransaction(graphene.Mutation):
         return CreateTransaction(transaction=transaction_instance)
 
 class CreateManyTransactions(graphene.Mutation):
-    '''
-    Creates bulk of transactions.
-
-    Takes arguments: amount, description, category_id, month_id.
-
-    User can access only personal categories/months.
-    '''
     class Input:
        transactions = graphene.List(TransactionInput)
 
@@ -92,14 +78,6 @@ class CreateManyTransactions(graphene.Mutation):
         return CreateManyTransactions(transactions=transactions)
 
 class UpdateTransaction(graphene.Mutation):
-    '''
-    Updates transaction data.
-
-    Takes arguments: transaction_id and data user wants to change.
-    All optional: amount, description, category_id, month_id.
-
-    User can update only personal transactions with personal categories.
-    '''
     transaction = graphene.Field(TransactionType)
 
     class Arguments:
@@ -132,15 +110,10 @@ class UpdateTransaction(graphene.Mutation):
         return UpdateTransaction(transaction=transaction)
 
 class DeleteTransaction(graphene.Mutation):
-    '''
-    Deletes transactions.
-
-    Takes argument: transaction_id - required!
-    '''
     transaction =  graphene.Field(TransactionType)
 
     class Arguments:
-        transaction_id = graphene.Int(required=True)
+        transaction_id = graphene.ID(required=True)
 
     def mutate(root, info, transaction_id):
         user = info.context.user
@@ -153,7 +126,7 @@ class DeleteTransaction(graphene.Mutation):
 class CategoryInput(graphene.InputObjectType):
     '''
     Arguments for Category create/update mutation classes.
-    Defines fields allowing user to create or change the data.
+    Defines fields allowing user to create or change caregory data.
     '''
     category_id = graphene.ID()
     name = graphene.String()
@@ -161,8 +134,6 @@ class CategoryInput(graphene.InputObjectType):
 
 class CreateCategory(graphene.Mutation):
     '''
-    Creates a category.
-    Takes arguments: amount, description, category_id.
     User can't create a category with name that already exists.
     '''
     category = graphene.Field(CategoryType)
@@ -190,15 +161,6 @@ class CreateCategory(graphene.Mutation):
         return CreateCategory(category=category_instance)
 
 class UpdateCategory(graphene.Mutation):
-    '''
-    Updates category data.
-
-    Takes arguments: category_id and data user wants to change.
-    All optional: name, group.
-
-    User can update only personal categories.
-    User can't update to existing category.
-    '''
     category = graphene.Field(CategoryType)
 
     class Arguments:
@@ -234,15 +196,10 @@ class UpdateCategory(graphene.Mutation):
         return UpdateCategory(category=category_instance)
 
 class DeleteCategory(graphene.Mutation):
-    '''
-    Deletes categories.
-
-    Takes argument: category_id - required!
-    '''
     category = graphene.Field(CategoryType)
 
     class Arguments:
-        category_id = graphene.Int(required=True)
+        category_id = graphene.ID(required=True)
 
     def mutate(root, info, category_id):
         user = info.context.user
@@ -255,7 +212,7 @@ class DeleteCategory(graphene.Mutation):
 class MonthInput(graphene.InputObjectType):
     '''
     Arguments for Month create/update mutation classes.
-    Defines fields allowing user to create or change the data.
+    Defines fields allowing user to create or change the month data.
     '''
     month_id = graphene.ID()
     year = graphene.String()
@@ -264,13 +221,6 @@ class MonthInput(graphene.InputObjectType):
     start_month_balance = graphene.Int()
 
 class CreateMonth(graphene.Mutation):
-    '''
-    Creates month.
-
-    Takes arguments: year, month, start_month_savings, start_month_balance.
-
-    User can't create month that already exists.
-    '''
     month = graphene.Field(MonthType)
 
     class Arguments:
@@ -297,13 +247,6 @@ class CreateMonth(graphene.Mutation):
         return CreateMonth(month=month_instance)
 
 class UpdateMonth(graphene.Mutation):
-    '''
-    Updates month data.
-
-    Takes arguments: month_id and data user wants to change.
-
-    All optional: year, month, start_month_savings, start_month_balance.
-    '''
     month = graphene.Field(MonthType)
 
     class Arguments:
@@ -329,21 +272,18 @@ class UpdateMonth(graphene.Mutation):
         return UpdateMonth(month=month_instance)
 
 class PlanInput(graphene.InputObjectType):
+    '''
+    Arguments for Month create/update mutation classes.
+    Defines fields allowing user to create or change plan data.
+    User can create plan after creating caregory and month.
+    User can create only one plan within month.
+    '''
     plan_id = graphene.ID()
     month_id = graphene.ID(required=True)
     category_id = graphene.ID(required=True)
     planned_amount = graphene.Int(required=True)
 
 class CreatePlan(graphene.Mutation):
-    '''
-    Creates plan for category per month.
-
-    Required arguments: month_id, category_id, planned_amount.
-
-    User can access only personal categories/months.
-
-    You can create only one plan per category+month.
-    '''
     plan = graphene.Field(PlanType)
 
     class Arguments:
@@ -377,9 +317,6 @@ class CreatePlan(graphene.Mutation):
         return CreatePlan(plan=plan_instance)
 
 class UpdatePlan(graphene.Mutation):
-        '''
-        Updates only amount.
-        '''
         plan = graphene.Field(PlanType)
 
         class Arguments:
