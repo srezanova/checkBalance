@@ -24,7 +24,7 @@ class CreateTransaction(graphene.Mutation):
         transaction_data = TransactionInput(required=True)
 
     @staticmethod
-    def mutate(root, info, transaction_data):
+    def mutate(self, info, transaction_data):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -53,7 +53,7 @@ class CreateManyTransactions(graphene.Mutation):
     transactions = graphene.List(lambda: TransactionType)
 
     @staticmethod
-    def mutate(root, info, **kwargs):
+    def mutate(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -84,7 +84,7 @@ class UpdateTransaction(graphene.Mutation):
         transaction_data = TransactionInput(required=True)
 
     @staticmethod
-    def mutate(root, info, transaction_data=None):
+    def mutate(self, info, transaction_data=None):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -115,7 +115,7 @@ class DeleteTransaction(graphene.Mutation):
     class Arguments:
         transaction_id = graphene.ID(required=True)
 
-    def mutate(root, info, transaction_id):
+    def mutate(self, info, transaction_id):
         user = info.context.user
         transaction_instance = Transaction.objects.get(id=transaction_id)
         if transaction_instance.user != user:
@@ -142,7 +142,7 @@ class CreateCategory(graphene.Mutation):
         category_data = CategoryInput(required=True)
 
     @staticmethod
-    def mutate(root, info, category_data):
+    def mutate(self, info, category_data):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -167,7 +167,7 @@ class UpdateCategory(graphene.Mutation):
         category_data = CategoryInput(required=True)
 
     @staticmethod
-    def mutate(root, info, category_data=None):
+    def mutate(self, info, category_data=None):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -201,7 +201,7 @@ class DeleteCategory(graphene.Mutation):
     class Arguments:
         category_id = graphene.ID(required=True)
 
-    def mutate(root, info, category_id):
+    def mutate(self, info, category_id):
         user = info.context.user
         category_instance = Category.objects.get(id=category_id)
         if category_instance.user != user:
@@ -227,7 +227,7 @@ class CreateMonth(graphene.Mutation):
         month_data = MonthInput(required=True)
 
     @staticmethod
-    def mutate(root, info, month_data):
+    def mutate(self, info, month_data):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -253,7 +253,7 @@ class UpdateMonth(graphene.Mutation):
         month_data = MonthInput(required=True)
 
     @staticmethod
-    def mutate(root, info, month_data=None):
+    def mutate(self, info, month_data=None):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -290,7 +290,7 @@ class CreatePlan(graphene.Mutation):
         plan_data = PlanInput(required=True)
 
     @staticmethod
-    def mutate(root, info, plan_data):
+    def mutate(self, info, plan_data):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
@@ -324,7 +324,7 @@ class UpdatePlan(graphene.Mutation):
             planned_amount = graphene.Int(required=True)
 
         @staticmethod
-        def mutate(root, info, plan_id, planned_amount):
+        def mutate(self, info, plan_id, planned_amount):
             user = info.context.user
             if user.is_anonymous:
                 raise GraphQLError('You need to be logged in.')
