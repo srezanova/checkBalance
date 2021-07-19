@@ -2,7 +2,8 @@
 **/migrations/**
 budget/migrations/0001_initial.py
 users/migrations/0001_initial.py
-.static
+/static
+udo journalctl -u gunicorn
 db.sqlite3
 /db.sqlite3
 .vscode/settings.json
