@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = env('SECRET_KEY')
 
-DEBUG = env('DEBUG')
+DEBUG = (env('DEBUG') == 'True')
 
 ALLOWED_HOSTS = [
     '143.198.170.199',
