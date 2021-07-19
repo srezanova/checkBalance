@@ -20,6 +20,7 @@ ALLOWED_HOSTS = [
     'www.apiv2.ohnomy.cash',
     'apiv2.ohnomy.cash',
     '127.0.0.1',
+    'stage.ohnomy.cash',
     ]
 
 INTERNAL_IPS = [
