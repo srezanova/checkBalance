@@ -5,7 +5,7 @@ from budget.models import Transaction as TransactionModel
 from budget.models import Category as CategoryModel
 from budget.models import Month as MonthModel
 from budget.models import Plan as PlanModel
-from .schema import Transaction, Category, Month, Plan
+from .schema import GroupChoice, YearChoice, MonthChoice, Transaction, Category, Month, Plan
 
 
 class CreateTransaction(graphene.Mutation):
@@ -204,31 +204,41 @@ class CategoryInput(graphene.InputObjectType):
 
 class CreateCategory(graphene.Mutation):
     '''
-    User can't create a category with name that already exists.
+    Creates category. User can't create a category with name that already exists.
     '''
-    category = graphene.Field(Category)
+    id = graphene.ID()
+    name = graphene.String()
+    group = GroupChoice()
 
     class Arguments:
-        category_data = CategoryInput(required=True)
+        name = graphene.String(required=True)
+        group = GroupChoice(required=True)
 
     @staticmethod
-    def mutate(self, info, category_data):
+    def mutate(self, info, name, group):
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
-        if CategoryModel.objects.filter(
-            name=category_data.name,
-            group=category_data.group,
-            user=user
-        ).exists():
-            raise GraphQLError('Category with this name already exists.')
-        category_instance = CategoryModel(
-            name=category_data.name,
-            group=category_data.group,
-            user=user,
-        )
-        category_instance.save()
-        return CreateCategory(category=category_instance)
+
+        try:
+            category = CategoryModel.objects.get(name=name,
+                                                 group=group,
+                                                 user=user)
+            return CreateCategory(id=category.id,
+                                  name=name,
+                                  group=group)
+
+        except CategoryModel.DoesNotExist:
+            category = CategoryModel(
+                name=name,
+                group=group,
+                user=user,
+            )
+            category.save()
+            return CreateCategory(id=category.id,
+                                  name=name,
+                                  group=group)
 
 
 class UpdateCategory(graphene.Mutation):
