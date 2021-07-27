@@ -20,7 +20,7 @@ class CreateTransaction(graphene.Mutation):
         amount = graphene.Int(required=True)
         description = graphene.String()
         category_id = graphene.ID()
-        month_id = graphene.ID()
+        month_id = graphene.ID(required=True)
 
     @staticmethod
     def mutate(self, info, amount=None, description=None, category_id=None, month_id=None):
@@ -63,15 +63,15 @@ class TransactionInput(graphene.InputObjectType):
     amount = graphene.Int(required=True)
     description = graphene.String()
     category_id = graphene.ID()
-    month_id = graphene.ID()
+    month_id = graphene.ID(required=True)
 
 
-class CreateManyTransactions(graphene.Mutation):
+class CreateTransactions(graphene.Mutation):
     '''Creates bulk of transactions.'''
+    transactions = graphene.List(lambda: Transaction)
+
     class Input:
         transactions = graphene.List(TransactionInput)
-
-    transactions = graphene.List(lambda: Transaction)
 
     @ staticmethod
     def mutate(self, info, **kwargs):
@@ -106,43 +106,66 @@ class CreateManyTransactions(graphene.Mutation):
 
             transactions.append(transaction)
 
-        return CreateManyTransactions(transactions=transactions)
+        return CreateTransactions(transactions=transactions)
 
 
 class UpdateTransaction(graphene.Mutation):
-    transaction = graphene.Field(Transaction)
+    '''Updates a transaction.
+    If updated category / month not found they stay the same.'''
+    id = graphene.ID()
+    amount = graphene.Int()
+    description = graphene.String()
+    category = graphene.Field(Category)
+    month = graphene.Field(Month)
 
     class Arguments:
-        transaction_data = TransactionInput(required=True)
+        id = graphene.ID(required=True)
+        amount = graphene.Int()
+        description = graphene.String()
+        category_id = graphene.ID()
+        month_id = graphene.ID()
 
     @staticmethod
-    def mutate(self, info, transaction_data=None):
+    def mutate(self, info, id=None, amount=None, description=None, category_id=None, month_id=None):
+
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
-        transaction = TransactionModel.objects.get(
-            pk=transaction_data.transaction_id)
-        if transaction.user != user:
-            raise GraphQLError('Not permitted to update this transaction.')
-        if transaction_data.amount is not None:
-            transaction.amount = transaction_data.amount
-        if transaction_data.description is not None:
-            transaction.description = transaction_data.description
-        if transaction_data.category_id is not None:
-            category = CategoryModel.objects.get(
-                id=transaction_data.category_id)
-            if category.user != user:
-                raise GraphQLError(
-                    "Can't find category with given category ID.")
-            transaction.category_id = transaction_data.category_id
-        if transaction_data.month_id is not None:
-            month = MonthModel.objects.get(id=transaction_data.month_id)
-            if month.user != user:
-                raise GraphQLError("Can't find month with given month ID.")
-            transaction.month_id = transaction_data.month_id
+
+        try:
+            transaction = TransactionModel.objects.get(id=id, user=user)
+        except TransactionModel.DoesNotExist:
+            return None
+
+        try:
+            category = CategoryModel.objects.get(id=category_id, user=user)
+            transaction.category_id = category_id
+        except CategoryModel.DoesNotExist:
+            category_id = transaction.category_id
+            category = CategoryModel.objects.get(id=category_id, user=user)
+            transaction.category_id = category_id
+
+        try:
+            month = MonthModel.objects.get(id=month_id, user=user)
+            transaction.month_id = month_id
+        except MonthModel.DoesNotExist:
+            month_id = transaction.month_id
+            month = MonthModel.objects.get(id=month_id, user=user)
+            transaction.month_id = month_id
+
+        if amount is not None:
+            transaction.amount = amount
+        if description is not None:
+            transaction.description = description
 
         transaction.save()
-        return UpdateTransaction(transaction=transaction)
+
+        return UpdateTransaction(id=transaction.id,
+                                 amount=transaction.amount,
+                                 description=transaction.description,
+                                 category=category,
+                                 month=month)
 
 
 class DeleteTransaction(graphene.Mutation):
@@ -385,7 +408,7 @@ class UpdatePlan(graphene.Mutation):
 
 class Mutation(graphene.ObjectType):
     create_transaction = CreateTransaction.Field()
-    create_many_transactions = CreateManyTransactions.Field()
+    create_transactions = CreateTransactions.Field()
     update_transaction = UpdateTransaction.Field()
     delete_transaction = DeleteTransaction.Field()
     create_category = CreateCategory.Field()
