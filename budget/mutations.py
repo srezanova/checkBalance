@@ -8,18 +8,6 @@ from budget.models import Plan as PlanModel
 from .schema import Transaction, Category, Month, Plan
 
 
-class TransactionInput(graphene.InputObjectType):
-    '''
-    Arguments for Transaction create/update mutation classes.
-    Defines fields allowing user to create or change the data.
-    '''
-    transaction_id = graphene.ID()
-    amount = graphene.Int()
-    description = graphene.String()
-    category_id = graphene.ID()
-    month_id = graphene.ID()
-
-
 class CreateTransaction(graphene.Mutation):
     '''Creates a transaction'''
     id = graphene.ID()
@@ -36,11 +24,10 @@ class CreateTransaction(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info, amount=None, description=None, category_id=None, month_id=None):
-
         user = info.context.user
 
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
 
         try:
             category = CategoryModel.objects.get(id=category_id, user=user)
@@ -68,7 +55,19 @@ class CreateTransaction(graphene.Mutation):
                                  month=month)
 
 
+class TransactionInput(graphene.InputObjectType):
+    '''
+    Arguments for Transaction create/update mutation classes.
+    Defines fields allowing user to create or change the data.
+    '''
+    amount = graphene.Int(required=True)
+    description = graphene.String()
+    category_id = graphene.ID()
+    month_id = graphene.ID()
+
+
 class CreateManyTransactions(graphene.Mutation):
+    '''Creates bulk of transactions.'''
     class Input:
         transactions = graphene.List(TransactionInput)
 
@@ -77,29 +76,36 @@ class CreateManyTransactions(graphene.Mutation):
     @ staticmethod
     def mutate(self, info, **kwargs):
         user = info.context.user
+
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
+
         transactions = []
+
         for transaction in kwargs.get('transactions'):
-            if transaction.category_id is not None:
+
+            try:
                 category = CategoryModel.objects.get(
-                    id=transaction.category_id)
-                if category.user != user:
-                    raise GraphQLError(
-                        "Can't find category with given category ID.")
-            if transaction.month_id is not None:
+                    id=transaction['category_id'], user=user)
+            except CategoryModel.DoesNotExist:
+                category = None
+
+            try:
                 month = MonthModel.objects.get(
-                    id=transaction.month_id, user=user)
-                if month.user != user:
-                    raise GraphQLError("Can't find month with given month ID.")
+                    id=transaction['month_id'], user=user)
+            except MonthModel.DoesNotExist:
+                month = None
+
             transaction = TransactionModel.objects.create(
-                amount=transaction.amount,
-                description=transaction.description,
-                category_id=transaction.category_id,
-                month_id=transaction.month_id,
+                amount=transaction['amount'],
+                description=transaction['description'],
+                category=category,
+                month=month,
                 user=user,
             )
+
             transactions.append(transaction)
+
         return CreateManyTransactions(transactions=transactions)
 
 
@@ -113,7 +119,7 @@ class UpdateTransaction(graphene.Mutation):
     def mutate(self, info, transaction_data=None):
         user = info.context.user
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
         transaction = TransactionModel.objects.get(
             pk=transaction_data.transaction_id)
         if transaction.user != user:
@@ -178,7 +184,7 @@ class CreateCategory(graphene.Mutation):
     def mutate(self, info, category_data):
         user = info.context.user
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
         if CategoryModel.objects.filter(
             name=category_data.name,
             group=category_data.group,
@@ -204,7 +210,7 @@ class UpdateCategory(graphene.Mutation):
     def mutate(self, info, category_data=None):
         user = info.context.user
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
         category_instance = CategoryModel.objects.get(
             id=category_data.category_id,
         )
@@ -267,7 +273,7 @@ class CreateMonth(graphene.Mutation):
     def mutate(self, info, month_data):
         user = info.context.user
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
         if MonthModel.objects.filter(
             month=month_data.month,
             year=month_data.year,
@@ -294,7 +300,7 @@ class UpdateMonth(graphene.Mutation):
     def mutate(self, info, month_data=None):
         user = info.context.user
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
         month_instance = MonthModel.objects.get(id=month_data.month_id)
         if month_instance.user != user:
             raise GraphQLError('Not permitted to update this month.')
@@ -333,7 +339,7 @@ class CreatePlan(graphene.Mutation):
     def mutate(self, info, plan_data):
         user = info.context.user
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
         category = CategoryModel.objects.get(id=plan_data.category_id)
         if category.user != user:
             raise GraphQLError("Can't find category with given category ID.")
@@ -368,7 +374,7 @@ class UpdatePlan(graphene.Mutation):
     def mutate(self, info, plan_id, planned_amount):
         user = info.context.user
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
         plan = PlanModel.objects.get(id=plan_id)
         if plan.user != user:
             raise GraphQLError('Not permitted to update this plan.')

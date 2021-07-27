@@ -108,7 +108,7 @@ class Query(graphene.ObjectType):
         user = info.context.user
 
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
 
         # saving passed args for filter and deleting fields we cannot pass in filter
         saved_args = locals()
@@ -125,7 +125,7 @@ class Query(graphene.ObjectType):
         user = info.context.user
 
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
 
         # saving passed args for filter and deleting fields we cannot pass in filter
         saved_args = locals()
@@ -149,7 +149,7 @@ class Query(graphene.ObjectType):
         user = info.context.user
 
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
 
         if category_id is not None:
             try:
@@ -181,7 +181,7 @@ class Query(graphene.ObjectType):
         user = info.context.user
 
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
 
         if category_id is not None:
             try:

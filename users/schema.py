@@ -22,6 +22,6 @@ class Query(graphene.ObjectType):
         user = info.context.user
 
         if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
+            raise GraphQLError('Unauthorized.')
 
         return user
