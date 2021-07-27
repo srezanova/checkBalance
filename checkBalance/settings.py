@@ -4,7 +4,6 @@ from datetime import timedelta
 import environ
 
 
-
 env = environ.Env()
 environ.Env.read_env()
 
@@ -21,7 +20,7 @@ ALLOWED_HOSTS = [
     'apiv2.ohnomy.cash',
     '127.0.0.1',
     'stage.ohnomy.cash',
-    ]
+]
 
 INTERNAL_IPS = [
     '127.0.0.1',
@@ -93,7 +92,7 @@ DATABASES = {
 }
 
 GRAPHENE = {
-    'SCHEMA': 'checkBalance.schema.schema' ,
+    'SCHEMA': 'checkBalance.schema.schema',
     'MIDDLEWARE': [
         'graphql_jwt.middleware.JSONWebTokenMiddleware',
     ],
@@ -114,15 +113,13 @@ AUTHENTICATION_BACKENDS = [
 GRAPHQL_JWT = {
     "JWT_VERIFY_EXPIRATION": True,
     "JWT_LONG_RUNNING_REFRESH_TOKEN": True,
-    'JWT_EXPIRATION_DELTA': timedelta(minutes=60),
-    'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=50),
+    'JWT_EXPIRATION_DELTA': timedelta(days=30),
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     'JWT_SECRET_KEY': env('JWT_KEY'),
     'JWT_ALGORITHM': 'HS256',
     "JWT_ALLOW_ANY_CLASSES": [
         "graphql_auth.mutations.Register",
         "graphql_auth.mutations.ObtainJSONWebToken",
-        "graphql_auth.mutations.RefreshToken",
     ],
 }
 
@@ -131,7 +128,7 @@ GRAPHQL_AUTH = {
     'ALLOW_LOGIN_NOT_VERIFIED': True,
     'REGISTER_MUTATION_FIELDS': ["email"],
     'SEND_ACTIVATION_EMAIL': False,
-    }
+}
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',

@@ -3,99 +3,140 @@ from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 import graphene_django_optimizer as gql_optimizer
 
-from .models import Transaction, Category, Month, Plan
-from users.models import CustomUser
+from budget.models import Transaction as TransactionModel
+from budget.models import Category as CategoryModel
+from budget.models import Month as MonthModel
+from budget.models import Plan as PlanModel
+from users.schema import User
 
-class UserType(DjangoObjectType):
-    class Meta:
-        model = CustomUser
 
-class TransactionType(DjangoObjectType):
+class GroupChoice(graphene.Enum):
+    Expense = 'Expense'
+    Income = 'Income'
+    Savings = 'Savings'
+
+
+class YearChoice(graphene.Enum):
+    A_2021 = '2021'
+    A_2022 = '2022'
+    A_2023 = '2023'
+
+
+class MonthChoice(graphene.Enum):
+    January = 'January'
+    February = 'February'
+    March = 'March'
+    April = 'April'
+    May = 'May'
+    June = 'June'
+    July = 'July'
+    August = 'August'
+    September = 'September'
+    October = 'October'
+    November = 'November'
+    December = 'December'
+
+
+class Transaction(DjangoObjectType):
     id = graphene.ID(source='pk', required=True)
-    class Meta:
-        model = Transaction
 
-class CategoryType(DjangoObjectType):
-    id = graphene.ID(source='pk', required=True)
     class Meta:
-        model = Category
+        model = TransactionModel
+        description = "Type definition for a single transaction."
+        exclude = ['user']
 
-class MonthType(DjangoObjectType):
-    id = graphene.ID(source='pk', required=True)
-    class Meta:
-        model = Month
+    created_at = graphene.String()
 
-class PlanType(DjangoObjectType):
+
+class Category(DjangoObjectType):
     id = graphene.ID(source='pk', required=True)
+
     class Meta:
-        model = Plan
+        model = CategoryModel
+        description = "Type definition for a single category."
+        exclude = ['user', 'transactions', 'plan']
+
+
+class Month(DjangoObjectType):
+    id = graphene.ID(source='pk', required=True)
+
+    class Meta:
+        model = MonthModel
+        description = "Type definition for a single month."
+        exclude = ['user', 'transactions', 'plan']
+
+
+class Plan(DjangoObjectType):
+    id = graphene.ID(source='pk', required=True)
+
+    class Meta:
+        model = PlanModel
+        description = "Type definition for a single plan."
+        exclude = ['user']
+
 
 class Query(graphene.ObjectType):
-    all_categories = graphene.List(CategoryType)
-    category = graphene.Field(CategoryType, id=graphene.ID())
-    all_months = graphene.List(MonthType)
-    month = graphene.Field(MonthType, id=graphene.ID())
-    all_transactions = graphene.List(TransactionType)
-    transaction = graphene.Field(TransactionType, id=graphene.ID())
-    all_plans = graphene.List(PlanType)
-    plan = graphene.Field(PlanType, id=graphene.ID())
+    categories = graphene.List(Category,
+                               id=graphene.ID(),
+                               name=graphene.String(),
+                               group=GroupChoice(),
+                               description='Categories query')
 
-    def resolve_all_transactions(self, info, **kwargs):
+    months = graphene.List(Month,
+                           id=graphene.ID(),
+                           year=YearChoice(),
+                           month=MonthChoice(),
+                           description='Months query')
+
+    transactions = graphene.List(Transaction,
+                                 id=graphene.ID(),
+                                 created_at=graphene.String(),
+                                 amount=graphene.Int(),
+                                 desc=graphene.String(),
+                                 category_id=graphene.ID(),
+                                 month_id=graphene.ID(),
+                                 date_start=graphene.String(),
+                                 date_end=graphene.String(),
+                                 description='Transactions query')
+
+    plans = graphene.List(Plan,
+                          id=graphene.ID(),
+                          category_id=graphene.ID(),
+                          month_id=graphene.ID(),
+                          description='Plans query')
+
+    def resolve_transactions(self,
+                             info,
+                             id=None,
+                             created_at=None,
+                             amount=None,
+                             desc=None,
+                             category_id=None,
+                             month_id=None,
+                             date_start=None,
+                             date_end=None):
+        '''Resolves transactions.'''
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+
+        return gql_optimizer.query(TransactionModel.objects.filter(user=user), info)
+
+    def resolve_categories(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        return gql_optimizer.query(Transaction.objects.filter(user=user), info)
+        return gql_optimizer.query(CategoryModel.objects.filter(user=user), info)
 
-    def resolve_transaction(self, info, id):
+    def resolve_months(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        transaction = Transaction.objects.get(id=id)
-        if transaction.user != user:
-            raise GraphQLError('Not found.')
-        return transaction
+        return gql_optimizer.query(MonthModel.objects.filter(user=user), info)
 
-    def resolve_all_categories(self, info, **kwargs):
+    def resolve_plans(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        return gql_optimizer.query(Category.objects.filter(user=user), info)
-
-    def resolve_category(self, info, id):
-        user = info.context.user
-        if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
-        category = Category.objects.get(id=id)
-        if category.user != user:
-            raise GraphQLError('Not found.')
-        return category
-
-    def resolve__all_months(self, info, **kwargs):
-        user = info.context.user
-        if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
-        return gql_optimizer.query(Month.objects.filter(user=user), info)
-
-    def resolve_month(self, info, id):
-        user = info.context.user
-        if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
-        month = Month.objects.get(id=id)
-        if month.user != user:
-            raise GraphQLError('Not found.')
-        return month
-
-    def resolve_all_plans(self, info, **kwargs):
-        user = info.context.user
-        if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
-        return gql_optimizer.query(Plan.objects.filter(user=user), info)
-
-    def resolve_plan(self, info, id):
-        user = info.context.user
-        if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
-        plan = Plan.objects.get(id=id)
-        if plan.user != user:
-            raise GraphQLError('Not found.')
-        return plan
+        return gql_optimizer.query(PlanModel.objects.filter(user=user), info)
