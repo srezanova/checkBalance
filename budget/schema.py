@@ -118,7 +118,24 @@ class Query(graphene.ObjectType):
         # creating new dict with not None args
         saved_args = {k: v for k, v in saved_args.items() if v is not None}
 
-        return CategoryModel.objects.filter(**saved_args)
+        return gql_optimizer.query(CategoryModel.objects.filter(**saved_args), info)
+
+    def resolve_months(self, info, id=None, year=None, month=None):
+        '''Resolves months'''
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+
+        # saving passed args for filter and deleting fields we cannot pass in filter
+        saved_args = locals()
+        del saved_args['self']
+        del saved_args['info']
+
+        # creating new dict with not None args
+        saved_args = {k: v for k, v in saved_args.items() if v is not None}
+
+        return gql_optimizer.query(MonthModel.objects.filter(**saved_args), info)
 
     def resolve_transactions(self,
                              info,
@@ -158,14 +175,34 @@ class Query(graphene.ObjectType):
 
         return gql_optimizer.query(TransactionModel.objects.filter(**saved_args), info)
 
-    def resolve_months(self, info, **kwargs):
-        user = info.context.user
-        if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
-        return gql_optimizer.query(MonthModel.objects.filter(user=user), info)
+    def resolve_plans(self, info, id=None, category_id=None, month_id=None):
+        '''Resolves plans'''
 
-    def resolve_plans(self, info, **kwargs):
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        return gql_optimizer.query(PlanModel.objects.filter(user=user), info)
+
+        if category_id is not None:
+            try:
+                category = CategoryModel.objects.get(id=category_id)
+            except CategoryModel.DoesNotExist:
+                return []
+
+        if month_id is not None:
+            try:
+                month = MonthModel.objects.get(id=month_id)
+            except MonthModel.DoesNotExist:
+                return []
+
+        # saving passed args for filter and deleting fields we cannot pass in filter
+        saved_args = locals()
+        del saved_args['self']
+        del saved_args['info']
+        del saved_args['category_id']
+        del saved_args['month_id']
+
+        # creating new dict with not None args
+        saved_args = {k: v for k, v in saved_args.items() if v is not None}
+
+        return gql_optimizer.query(PlanModel.objects.filter(**saved_args), info)
