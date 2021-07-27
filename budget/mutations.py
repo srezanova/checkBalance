@@ -284,18 +284,27 @@ class UpdateCategory(graphene.Mutation):
 
 
 class DeleteCategory(graphene.Mutation):
-    category = graphene.Field(Category)
+    '''Deletes transaction. Returns boolean.'''
+    success = graphene.Boolean()
 
     class Arguments:
-        category_id = graphene.ID(required=True)
+        id = graphene.ID(required=True)
 
-    def mutate(self, info, category_id):
+    def mutate(self, info, id):
+
         user = info.context.user
-        category_instance = CategoryModel.objects.get(id=category_id)
-        if category_instance.user != user:
-            raise GraphQLError("Not permitted to delete this category")
-        category_instance.delete()
-        return None
+
+        if user.is_anonymous:
+            raise GraphQLError('Unauthorized.')
+
+        try:
+            category = CategoryModel.objects.get(id=id, user=user)
+            category.delete()
+            success = True
+        except CategoryModel.DoesNotExist:
+            success = False
+
+        return DeleteCategory(success=success)
 
 
 class MonthInput(graphene.InputObjectType):
