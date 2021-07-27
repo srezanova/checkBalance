@@ -192,16 +192,6 @@ class DeleteTransaction(graphene.Mutation):
         return DeleteTransaction(success=success)
 
 
-class CategoryInput(graphene.InputObjectType):
-    '''
-    Arguments for Category create/update mutation classes.
-    Defines fields allowing user to create or change caregory data.
-    '''
-    category_id = graphene.ID()
-    name = graphene.String()
-    group = graphene.String()
-
-
 class CreateCategory(graphene.Mutation):
     '''
     Creates category. User can't create a category with name that already exists.
@@ -320,30 +310,52 @@ class MonthInput(graphene.InputObjectType):
 
 
 class CreateMonth(graphene.Mutation):
-    month = graphene.Field(Month)
+    '''
+    Creates month. User can't create month that already exists.
+    Default value is 0.
+    '''
+    id = graphene.ID()
+    year = YearChoice()
+    month = MonthChoice()
+    start_month_savings = graphene.Int()
+    start_month_balance = graphene.Int()
 
     class Arguments:
-        month_data = MonthInput(required=True)
+        year = YearChoice(required=True)
+        month = MonthChoice(required=True)
+        start_month_savings = graphene.Int()
+        start_month_balance = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, month_data):
+    def mutate(self, info, year, month, start_month_savings=0, start_month_balance=0):
+
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
-        if MonthModel.objects.filter(
-            month=month_data.month,
-            year=month_data.year,
-            user=user
-        ).exists():
-            raise GraphQLError('Created month already exists.')
-        month_instance = MonthModel(
-            year=month_data.year,
-            month=month_data.month,
-            start_month_balance=month_data.start_month_balance,
-            start_month_savings=month_data.start_month_savings,
-            user=user)
-        month_instance.save()
-        return CreateMonth(month=month_instance)
+
+        try:
+            month_instance = MonthModel.objects.get(
+                year=year, month=month, user=user)
+            return CreateMonth(id=month_instance.id,
+                               year=year,
+                               month=month,
+                               start_month_balance=month_instance.start_month_balance,
+                               start_month_savings=month_instance.start_month_savings)
+        except MonthModel.DoesNotExist:
+            month_instance = MonthModel(
+                year=year,
+                month=month,
+                start_month_balance=start_month_balance,
+                start_month_savings=start_month_savings,
+                user=user
+            )
+            month_instance.save()
+            return CreateMonth(id=month_instance.id,
+                               year=year,
+                               month=month,
+                               start_month_balance=start_month_balance,
+                               start_month_savings=start_month_savings)
 
 
 class UpdateMonth(graphene.Mutation):
