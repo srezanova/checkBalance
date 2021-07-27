@@ -103,6 +103,23 @@ class Query(graphene.ObjectType):
                           month_id=graphene.ID(),
                           description='Plans query')
 
+    def resolve_categories(self, info, id=None, name=None, group=None):
+        '''Resolves categories'''
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('You need to be logged in.')
+
+        # saving passed args for filter and deleting fields we cannot pass in filter
+        saved_args = locals()
+        del saved_args['self']
+        del saved_args['info']
+
+        # creating new dict with not None args
+        saved_args = {k: v for k, v in saved_args.items() if v is not None}
+
+        return CategoryModel.objects.filter(**saved_args)
+
     def resolve_transactions(self,
                              info,
                              id=None,
@@ -131,7 +148,6 @@ class Query(graphene.ObjectType):
 
         # saving passed args for filter and deleting fields we cannot pass in filter
         saved_args = locals()
-
         del saved_args['self']
         del saved_args['info']
         del saved_args['category_id']
@@ -140,15 +156,7 @@ class Query(graphene.ObjectType):
         # creating new dict with not None args
         saved_args = {k: v for k, v in saved_args.items() if v is not None}
 
-        print(saved_args)
-
-        return TransactionModel.objects.filter(**saved_args)
-
-    def resolve_categories(self, info, **kwargs):
-        user = info.context.user
-        if user.is_anonymous:
-            raise GraphQLError('You need to be logged in.')
-        return gql_optimizer.query(CategoryModel.objects.filter(user=user), info)
+        return gql_optimizer.query(TransactionModel.objects.filter(**saved_args), info)
 
     def resolve_months(self, info, **kwargs):
         user = info.context.user
