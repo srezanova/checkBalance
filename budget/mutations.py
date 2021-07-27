@@ -9,7 +9,7 @@ from .schema import Transaction, Category, Month, Plan
 
 
 class CreateTransaction(graphene.Mutation):
-    '''Creates a transaction'''
+    '''Creates transaction'''
     id = graphene.ID()
     amount = graphene.Int()
     description = graphene.String()
@@ -110,7 +110,7 @@ class CreateTransactions(graphene.Mutation):
 
 
 class UpdateTransaction(graphene.Mutation):
-    '''Updates a transaction.
+    '''Updates transaction.
     If updated category / month not found they stay the same.'''
     id = graphene.ID()
     amount = graphene.Int()
@@ -169,19 +169,27 @@ class UpdateTransaction(graphene.Mutation):
 
 
 class DeleteTransaction(graphene.Mutation):
-    transaction = graphene.Field(Transaction)
+    '''Deletes transaction. Returns boolean.'''
+    success = graphene.Boolean()
 
     class Arguments:
-        transaction_id = graphene.ID(required=True)
+        id = graphene.ID(required=True)
 
     @staticmethod
-    def mutate(self, info, transaction_id):
+    def mutate(self, info, id):
         user = info.context.user
-        transaction_instance = TransactionModel.objects.get(id=transaction_id)
-        if transaction_instance.user != user:
-            raise GraphQLError('Not permitted to delete this transaction.')
-        transaction_instance.delete()
-        return None
+
+        if user.is_anonymous:
+            raise GraphQLError('Unauthorized.')
+
+        try:
+            transaction = TransactionModel.objects.get(id=id, user=user)
+            transaction.delete()
+            success = True
+        except TransactionModel.DoesNotExist:
+            success = False
+
+        return DeleteTransaction(success=success)
 
 
 class CategoryInput(graphene.InputObjectType):
