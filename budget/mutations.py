@@ -21,36 +21,51 @@ class TransactionInput(graphene.InputObjectType):
 
 
 class CreateTransaction(graphene.Mutation):
-    transaction = graphene.Field(Transaction)
+    '''Creates a transaction'''
+    id = graphene.ID()
+    amount = graphene.Int()
+    description = graphene.String()
+    category = graphene.Field(Category)
+    month = graphene.Field(Month)
 
     class Arguments:
-        transaction_data = TransactionInput(required=True)
+        amount = graphene.Int(required=True)
+        description = graphene.String()
+        category_id = graphene.ID()
+        month_id = graphene.ID()
 
     @staticmethod
-    def mutate(self, info, transaction_data):
+    def mutate(self, info, amount=None, description=None, category_id=None, month_id=None):
+
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
-        if transaction_data.category_id is not None:
-            category = CategoryModel.objects.get(
-                id=transaction_data.category_id)
-            if category.user != user:
-                raise GraphQLError(
-                    "Can't find category with given category ID.")
-        if transaction_data.month_id is not None:
-            month = MonthModel.objects.get(
-                id=transaction_data.month_id, user=user)
-            if not month:
-                raise GraphQLError("Can't find month with given month ID.")
-        transaction_instance = TransactionModel(
-            amount=transaction_data.amount,
-            description=transaction_data.description,
+
+        try:
+            category = CategoryModel.objects.get(id=category_id, user=user)
+        except CategoryModel.DoesNotExist:
+            category = None
+
+        try:
+            month = MonthModel.objects.get(id=month_id, user=user)
+        except MonthModel.DoesNotExist:
+            month = None
+
+        transaction = TransactionModel(
+            amount=amount,
+            description=description,
             user=user,
-            category_id=transaction_data.category_id,
-            month_id=transaction_data.month_id,
+            category=category,
+            month=month,
         )
-        transaction_instance.save()
-        return CreateTransaction(transaction=transaction_instance)
+        transaction.save()
+
+        return CreateTransaction(id=transaction.id,
+                                 amount=amount,
+                                 description=description,
+                                 category=category,
+                                 month=month)
 
 
 class CreateManyTransactions(graphene.Mutation):
@@ -59,7 +74,7 @@ class CreateManyTransactions(graphene.Mutation):
 
     transactions = graphene.List(lambda: Transaction)
 
-    @staticmethod
+    @ staticmethod
     def mutate(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous:
@@ -130,6 +145,7 @@ class DeleteTransaction(graphene.Mutation):
     class Arguments:
         transaction_id = graphene.ID(required=True)
 
+    @staticmethod
     def mutate(self, info, transaction_id):
         user = info.context.user
         transaction_instance = TransactionModel.objects.get(id=transaction_id)
