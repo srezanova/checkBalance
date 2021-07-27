@@ -126,7 +126,7 @@ class UpdateTransaction(graphene.Mutation):
         month_id = graphene.ID()
 
     @staticmethod
-    def mutate(self, info, id=None, amount=None, description=None, category_id=None, month_id=None):
+    def mutate(self, info, id, amount=None, description=None, category_id=None, month_id=None):
 
         user = info.context.user
 
@@ -228,7 +228,6 @@ class CreateCategory(graphene.Mutation):
             return CreateCategory(id=category.id,
                                   name=name,
                                   group=group)
-
         except CategoryModel.DoesNotExist:
             category = CategoryModel(
                 name=name,
@@ -242,39 +241,46 @@ class CreateCategory(graphene.Mutation):
 
 
 class UpdateCategory(graphene.Mutation):
-    category = graphene.Field(Category)
+    '''Updates category. Doesn't create already existing category.'''
+    id = graphene.ID()
+    name = graphene.String()
+    group = GroupChoice()
 
     class Arguments:
-        category_data = CategoryInput(required=True)
+        id = graphene.ID(required=True)
+        name = graphene.String()
+        group = GroupChoice()
 
     @staticmethod
-    def mutate(self, info, category_data=None):
+    def mutate(self, info, id, name=None, group=None):
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
-        category_instance = CategoryModel.objects.get(
-            id=category_data.category_id,
-        )
-        if category_instance.user != user:
-            raise GraphQLError('Not permitted to update this category')
-        if CategoryModel.objects.filter(
-            name=category_data.name,
-            group=category_instance.group,
-            user=user
-        ).exists():
-            raise GraphQLError('Category with this name already exists.')
-        if CategoryModel.objects.filter(
-            name=category_instance.name,
-            group=category_data.group,
-            user=user
-        ).exists():
-            raise GraphQLError('Category with this name already exists.')
-        if category_data.name is not None:
-            category_instance.name = category_data.name
-        if category_data.group is not None:
-            category_instance.group = category_data.group
-        category_instance.save()
-        return UpdateCategory(category=category_instance)
+
+        try:
+            category = CategoryModel.objects.get(id=id, user=user)
+        except CategoryModel.DoesNotExist:
+            return None
+
+        try:
+            category = CategoryModel.objects.get(name=name,
+                                                 group=group,
+                                                 user=user)
+            return UpdateCategory(id=category.id,
+                                  name=category.name,
+                                  group=category.group)
+        except CategoryModel.DoesNotExist:
+            if name is not None:
+                category.name = name
+            if group is not None:
+                category.group = group
+
+            category.save()
+
+            return UpdateCategory(id=category.id,
+                                  name=category.name,
+                                  group=category.group)
 
 
 class DeleteCategory(graphene.Mutation):
