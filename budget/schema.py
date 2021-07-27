@@ -95,8 +95,6 @@ class Query(graphene.ObjectType):
                                  desc=graphene.String(),
                                  category_id=graphene.ID(),
                                  month_id=graphene.ID(),
-                                 date_start=graphene.String(),
-                                 date_end=graphene.String(),
                                  description='Transactions query')
 
     plans = graphene.List(Plan,
@@ -112,16 +110,39 @@ class Query(graphene.ObjectType):
                              amount=None,
                              desc=None,
                              category_id=None,
-                             month_id=None,
-                             date_start=None,
-                             date_end=None):
+                             month_id=None,):
         '''Resolves transactions.'''
         user = info.context.user
 
         if user.is_anonymous:
             raise GraphQLError('You need to be logged in.')
 
-        return gql_optimizer.query(TransactionModel.objects.filter(user=user), info)
+        if category_id is not None:
+            try:
+                category = CategoryModel.objects.get(id=category_id)
+            except CategoryModel.DoesNotExist:
+                return []
+
+        if month_id is not None:
+            try:
+                month = MonthModel.objects.get(id=month_id)
+            except MonthModel.DoesNotExist:
+                return []
+
+        # saving passed args for filter and deleting fields we cannot pass in filter
+        saved_args = locals()
+
+        del saved_args['self']
+        del saved_args['info']
+        del saved_args['category_id']
+        del saved_args['month_id']
+
+        # creating new dict with not None args
+        saved_args = {k: v for k, v in saved_args.items() if v is not None}
+
+        print(saved_args)
+
+        return TransactionModel.objects.filter(**saved_args)
 
     def resolve_categories(self, info, **kwargs):
         user = info.context.user
