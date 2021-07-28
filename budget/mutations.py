@@ -231,7 +231,7 @@ class CreateCategory(graphene.Mutation):
 
 
 class UpdateCategory(graphene.Mutation):
-    '''Updates category. Doesn't create already existing category.'''
+    '''Updates category. Doesn't update to already existing category.'''
     id = graphene.ID()
     name = graphene.String()
     group = GroupChoice()
@@ -359,29 +359,40 @@ class CreateMonth(graphene.Mutation):
 
 
 class UpdateMonth(graphene.Mutation):
-    month = graphene.Field(Month)
+    '''Updates category.'''
+    id = graphene.ID()
+    year = YearChoice()
+    month = MonthChoice()
+    start_month_savings = graphene.Int()
+    start_month_balance = graphene.Int()
 
     class Arguments:
-        month_data = MonthInput(required=True)
+        id = graphene.ID(required=True)
+        start_month_savings = graphene.Int()
+        start_month_balance = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, month_data=None):
+    def mutate(self, info, id, start_month_savings=None, start_month_balance=None):
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
-        month_instance = MonthModel.objects.get(id=month_data.month_id)
-        if month_instance.user != user:
-            raise GraphQLError('Not permitted to update this month.')
-        if month_data.year is not None:
-            month_instance.year = month_data.year
-        if month_data.month is not None:
-            month_instance.month = month_data.month
-        if month_data.start_month_savings is not None:
-            month_instance.start_month_savings = month_data.start_month_savings
-        if month_data.start_month_balance is not None:
-            month_instance.start_month_balance = month_data.start_month_balance
+
+        try:
+            month_instance = MonthModel.objects.get(id=id, user=user)
+        except MonthModel.DoesNotExist:
+            return None
+
+        if start_month_savings is not None:
+            month_instance.start_month_savings = start_month_savings
+        if start_month_balance is not None:
+            month_instance.start_month_balance = start_month_balance
         month_instance.save()
-        return UpdateMonth(month=month_instance)
+        return UpdateMonth(id=month_instance.id,
+                           year=month_instance.year,
+                           month=month_instance.month,
+                           start_month_savings=month_instance.start_month_savings,
+                           start_month_balance=month_instance.start_month_balance)
 
 
 class PlanInput(graphene.InputObjectType):
