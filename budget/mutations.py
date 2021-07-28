@@ -19,11 +19,11 @@ class CreateTransaction(graphene.Mutation):
     class Arguments:
         amount = graphene.Int(required=True)
         description = graphene.String()
-        category_id = graphene.ID()
+        category_id = graphene.ID(required=True)
         month_id = graphene.ID(required=True)
 
     @staticmethod
-    def mutate(self, info, amount, description=None, category_id=None, month_id=None):
+    def mutate(self, info, amount, month_id, category_id, description=None):
         user = info.context.user
 
         if user.is_anonymous:
@@ -62,7 +62,7 @@ class TransactionInput(graphene.InputObjectType):
     '''
     amount = graphene.Int(required=True)
     description = graphene.String()
-    category_id = graphene.ID()
+    category_id = graphene.ID(required=True)
     month_id = graphene.ID(required=True)
 
 
@@ -95,6 +95,9 @@ class CreateTransactions(graphene.Mutation):
                     id=transaction['month_id'], user=user)
             except MonthModel.DoesNotExist:
                 month = None
+
+            if 'description' not in transaction:
+                transaction['description'] = ''
 
             transaction = TransactionModel.objects.create(
                 amount=transaction['amount'],
