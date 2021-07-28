@@ -16,27 +16,6 @@ class GroupChoice(graphene.Enum):
     Savings = 'Savings'
 
 
-class YearChoice(graphene.Enum):
-    A_2021 = '2021'
-    A_2022 = '2022'
-    A_2023 = '2023'
-
-
-class MonthChoice(graphene.Enum):
-    January = 'January'
-    February = 'February'
-    March = 'March'
-    April = 'April'
-    May = 'May'
-    June = 'June'
-    July = 'July'
-    August = 'August'
-    September = 'September'
-    October = 'October'
-    November = 'November'
-    December = 'December'
-
-
 class Transaction(DjangoObjectType):
     id = graphene.ID(source='pk', required=True)
 
@@ -80,44 +59,34 @@ class Query(graphene.ObjectType):
                               id=graphene.ID(required=True),
                               description='Single category query')
 
-    categories = graphene.List(Category,
-                               id=graphene.ID(),
-                               name=graphene.String(),
-                               group=GroupChoice(),
-                               description='Categories query')
+    categories = graphene.List(Category, description='Categories query')
 
     month = graphene.Field(Month,
                            id=graphene.ID(required=True),
                            description='Single month query')
 
-    months = graphene.List(Month,
-                           id=graphene.ID(),
-                           year=YearChoice(),
-                           month=MonthChoice(),
-                           description='Months query')
+    months = graphene.List(Month, description='Months query')
 
     transaction = graphene.Field(Transaction,
                                  id=graphene.ID(required=True),
-                                 description='Single transaction query')
+                                 description='Single transaction query. Date format YYYY-MM-DD')
 
     transactions = graphene.List(Transaction,
-                                 id=graphene.ID(),
                                  created_at=graphene.String(),
-                                 amount=graphene.Int(),
-                                 desc=graphene.String(),
-                                 category_id=graphene.ID(),
-                                 month_id=graphene.ID(),
-                                 description='Transactions query')
+                                 transaction_description=graphene.String(),
+                                 category=graphene.ID(),
+                                 month=graphene.ID(),
+                                 group=GroupChoice(),
+                                 description='Transactions query. Date format YYYY-MM-DD')
 
     plan = graphene.Field(Plan,
                           id=graphene.ID(required=True),
                           description='Single plan query')
 
     plans = graphene.List(Plan,
-                          id=graphene.ID(),
-                          category_id=graphene.ID(),
-                          month_id=graphene.ID(),
-                          description='Plans query')
+                          category=graphene.ID(),
+                          month=graphene.ID(),
+                          description='Plans query. Category and month takes ID.')
 
     def resolve_category(self, info, id):
         '''Resolves single category'''
@@ -182,15 +151,7 @@ class Query(graphene.ObjectType):
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
 
-        # saving passed args for filter and deleting fields we cannot pass in filter
-        saved_args = locals()
-        del saved_args['self']
-        del saved_args['info']
-
-        # creating new dict with not None args
-        saved_args = {k: v for k, v in saved_args.items() if v is not None}
-
-        return gql_optimizer.query(CategoryModel.objects.filter(**saved_args), info)
+        return gql_optimizer.query(CategoryModel.objects.filter(user=user), info)
 
     def resolve_months(self, info, id=None, year=None, month=None):
         '''Resolves months'''
@@ -199,39 +160,30 @@ class Query(graphene.ObjectType):
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
 
-        # saving passed args for filter and deleting fields we cannot pass in filter
-        saved_args = locals()
-        del saved_args['self']
-        del saved_args['info']
-
-        # creating new dict with not None args
-        saved_args = {k: v for k, v in saved_args.items() if v is not None}
-
-        return gql_optimizer.query(MonthModel.objects.filter(**saved_args), info)
+        return gql_optimizer.query(MonthModel.objects.filter(user=user), info)
 
     def resolve_transactions(self,
                              info,
-                             id=None,
+                             group=None,
                              created_at=None,
-                             amount=None,
-                             desc=None,
-                             category_id=None,
-                             month_id=None,):
+                             transaction_description=None,
+                             category=None,
+                             month=None,):
         '''Resolves transactions.'''
         user = info.context.user
 
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
 
-        if category_id is not None:
+        if category is not None:
             try:
-                category = CategoryModel.objects.get(id=category_id)
+                category_instance = CategoryModel.objects.get(id=category)
             except CategoryModel.DoesNotExist:
                 return []
 
-        if month_id is not None:
+        if month is not None:
             try:
-                month = MonthModel.objects.get(id=month_id)
+                month_instance = MonthModel.objects.get(id=month)
             except MonthModel.DoesNotExist:
                 return []
 
@@ -239,15 +191,15 @@ class Query(graphene.ObjectType):
         saved_args = locals()
         del saved_args['self']
         del saved_args['info']
-        del saved_args['category_id']
-        del saved_args['month_id']
+        del saved_args['category']
+        del saved_args['month']
 
         # creating new dict with not None args
         saved_args = {k: v for k, v in saved_args.items() if v is not None}
 
         return gql_optimizer.query(TransactionModel.objects.filter(**saved_args), info)
 
-    def resolve_plans(self, info, id=None, category_id=None, month_id=None):
+    def resolve_plans(self, info, category=None, month=None):
         '''Resolves plans'''
 
         user = info.context.user
@@ -255,15 +207,15 @@ class Query(graphene.ObjectType):
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
 
-        if category_id is not None:
+        if category is not None:
             try:
-                category = CategoryModel.objects.get(id=category_id)
+                category_instance = CategoryModel.objects.get(id=category)
             except CategoryModel.DoesNotExist:
                 return []
 
-        if month_id is not None:
+        if month is not None:
             try:
-                month = MonthModel.objects.get(id=month_id)
+                month_instance = MonthModel.objects.get(id=month)
             except MonthModel.DoesNotExist:
                 return []
 

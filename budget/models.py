@@ -7,7 +7,7 @@ from users.models import CustomUser
 class Category(models.Model):
     user = models.ForeignKey(CustomUser, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50, blank=False)
-    color = models.CharField(max_length=50, unique=True, blank=False)
+    color = models.CharField(max_length=50, blank=False, default='gray')
 
 
 class Month(models.Model):

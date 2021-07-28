@@ -5,7 +5,7 @@ from budget.models import Transaction as TransactionModel
 from budget.models import Category as CategoryModel
 from budget.models import Month as MonthModel
 from budget.models import Plan as PlanModel
-from .schema import GroupChoice, YearChoice, MonthChoice, Transaction, Category, Month, Plan
+from .schema import GroupChoice, Transaction, Category, Month, Plan
 
 
 class CreateTransaction(graphene.Mutation):
@@ -15,44 +15,48 @@ class CreateTransaction(graphene.Mutation):
     description = graphene.String()
     category = graphene.Field(Category)
     month = graphene.Field(Month)
+    group = graphene.String()
 
     class Arguments:
         amount = graphene.Int(required=True)
-        description = graphene.String()
-        category_id = graphene.ID(required=True)
-        month_id = graphene.ID(required=True)
+        group = graphene.String(required=True)
+        description = graphene.String(required=True)
+        category = graphene.ID()
+        month = graphene.ID(required=True)
 
     @staticmethod
-    def mutate(self, info, amount, month_id, category_id, description=None):
+    def mutate(self, info, amount, group, month, category, description=None):
         user = info.context.user
 
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
 
         try:
-            category = CategoryModel.objects.get(id=category_id, user=user)
+            category_instance = CategoryModel.objects.get(
+                id=category, user=user)
         except CategoryModel.DoesNotExist:
-            category = None
+            category_instance = None
 
         try:
-            month = MonthModel.objects.get(id=month_id, user=user)
+            month_instance = MonthModel.objects.get(id=month, user=user)
         except MonthModel.DoesNotExist:
-            month = None
+            month_instance = None
 
         transaction = TransactionModel(
             amount=amount,
             description=description,
             user=user,
-            category=category,
-            month=month,
+            category=category_instance,
+            month=month_instance,
+            group=group,
         )
         transaction.save()
 
         return CreateTransaction(id=transaction.id,
                                  amount=amount,
                                  description=description,
-                                 category=category,
-                                 month=month)
+                                 category=category_instance,
+                                 month=month_instance)
 
 
 class TransactionInput(graphene.InputObjectType):
@@ -62,8 +66,8 @@ class TransactionInput(graphene.InputObjectType):
     '''
     amount = graphene.Int(required=True)
     description = graphene.String()
-    category_id = graphene.ID(required=True)
-    month_id = graphene.ID(required=True)
+    category = graphene.ID(required=True)
+    month = graphene.ID(required=True)
 
 
 class CreateTransactions(graphene.Mutation):
@@ -85,16 +89,16 @@ class CreateTransactions(graphene.Mutation):
         for transaction in kwargs.get('transactions'):
 
             try:
-                category = CategoryModel.objects.get(
-                    id=transaction['category_id'], user=user)
+                category_instance = CategoryModel.objects.get(
+                    id=transaction['category'], user=user)
             except CategoryModel.DoesNotExist:
-                category = None
+                category_instance = None
 
             try:
-                month = MonthModel.objects.get(
-                    id=transaction['month_id'], user=user)
+                month_instance = MonthModel.objects.get(
+                    id=transaction['month'], user=user)
             except MonthModel.DoesNotExist:
-                month = None
+                month_instance = None
 
             if 'description' not in transaction:
                 transaction['description'] = ''
@@ -102,8 +106,8 @@ class CreateTransactions(graphene.Mutation):
             transaction = TransactionModel.objects.create(
                 amount=transaction['amount'],
                 description=transaction['description'],
-                category=category,
-                month=month,
+                category=category_instance,
+                month=month_instance,
                 user=user,
             )
 
@@ -198,17 +202,16 @@ class DeleteTransaction(graphene.Mutation):
 class CreateCategory(graphene.Mutation):
     '''
     Creates category. User can't create a category with name that already exists.
+    Default color is gray
     '''
-    id = graphene.ID()
-    name = graphene.String()
-    group = GroupChoice()
-
     class Arguments:
         name = graphene.String(required=True)
-        group = GroupChoice(required=True)
+        color = graphene.String()
+
+    Output = Category
 
     @staticmethod
-    def mutate(self, info, name, group):
+    def mutate(self, info, name, color='gray'):
         user = info.context.user
 
         if user.is_anonymous:
@@ -216,36 +219,29 @@ class CreateCategory(graphene.Mutation):
 
         try:
             category = CategoryModel.objects.get(name=name,
-                                                 group=group,
                                                  user=user)
-            return CreateCategory(id=category.id,
-                                  name=name,
-                                  group=group)
+
         except CategoryModel.DoesNotExist:
             category = CategoryModel(
                 name=name,
-                group=group,
+                color=color,
                 user=user,
             )
             category.save()
-            return CreateCategory(id=category.id,
-                                  name=name,
-                                  group=group)
+            return category
 
 
 class UpdateCategory(graphene.Mutation):
     '''Updates category. Doesn't update to already existing category.'''
-    id = graphene.ID()
-    name = graphene.String()
-    group = GroupChoice()
-
     class Arguments:
         id = graphene.ID(required=True)
         name = graphene.String()
-        group = GroupChoice()
+        color = graphene.String()
+
+    Output = Category
 
     @staticmethod
-    def mutate(self, info, id, name=None, group=None):
+    def mutate(self, info, id, name=None, color=None):
         user = info.context.user
 
         if user.is_anonymous:
@@ -258,30 +254,26 @@ class UpdateCategory(graphene.Mutation):
 
         try:
             category = CategoryModel.objects.get(name=name,
-                                                 group=group,
                                                  user=user)
-            return UpdateCategory(id=category.id,
-                                  name=category.name,
-                                  group=category.group)
         except CategoryModel.DoesNotExist:
             if name is not None:
                 category.name = name
-            if group is not None:
-                category.group = group
 
-            category.save()
+        if color is not None:
+            category.color = color
 
-            return UpdateCategory(id=category.id,
-                                  name=category.name,
-                                  group=category.group)
+        category.save()
+
+        return category
 
 
 class DeleteCategory(graphene.Mutation):
-    '''Deletes transaction. Returns boolean.'''
-    success = graphene.Boolean()
+    '''Delete category by ID'''
 
     class Arguments:
         id = graphene.ID(required=True)
+
+    Output = Category
 
     def mutate(self, info, id):
 
@@ -293,11 +285,10 @@ class DeleteCategory(graphene.Mutation):
         try:
             category = CategoryModel.objects.get(id=id, user=user)
             category.delete()
-            success = True
         except CategoryModel.DoesNotExist:
-            success = False
+            return None
 
-        return DeleteCategory(success=success)
+        return category
 
 
 class CreateMonth(graphene.Mutation):
@@ -306,14 +297,14 @@ class CreateMonth(graphene.Mutation):
     Default value is 0.
     '''
     id = graphene.ID()
-    year = YearChoice()
-    month = MonthChoice()
+    year = graphene.Int()
+    month = graphene.Int()
     start_month_savings = graphene.Int()
     start_month_balance = graphene.Int()
 
     class Arguments:
-        year = YearChoice(required=True)
-        month = MonthChoice(required=True)
+        year = graphene.Int(required=True)
+        month = graphene.Int(required=True)
         start_month_savings = graphene.Int()
         start_month_balance = graphene.Int()
 
@@ -352,8 +343,8 @@ class CreateMonth(graphene.Mutation):
 class UpdateMonth(graphene.Mutation):
     '''Updates category.'''
     id = graphene.ID()
-    year = YearChoice()
-    month = MonthChoice()
+    year = graphene.Int()
+    month = graphene.Int()
     start_month_savings = graphene.Int()
     start_month_balance = graphene.Int()
 
