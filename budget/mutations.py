@@ -440,23 +440,34 @@ class CreatePlan(graphene.Mutation):
 
 
 class UpdatePlan(graphene.Mutation):
-    plan = graphene.Field(Plan)
+    '''Updates planned amount.'''
+    id = graphene.ID()
+    category = graphene.Field(Category)
+    month = graphene.Field(Month)
+    planned_amount = graphene.Int()
 
     class Arguments:
-        plan_id = graphene.ID(required=True)
+        id = graphene.ID(required=True)
         planned_amount = graphene.Int(required=True)
 
     @staticmethod
-    def mutate(self, info, plan_id, planned_amount):
+    def mutate(self, info, id, planned_amount):
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
-        plan = PlanModel.objects.get(id=plan_id)
-        if plan.user != user:
-            raise GraphQLError('Not permitted to update this plan.')
+
+        try:
+            plan = PlanModel.objects.get(id=id, user=user)
+        except PlanModel.DoesNotExist:
+            return None
+
         plan.planned_amount = planned_amount
         plan.save()
-        return UpdatePlan(plan=plan)
+        return UpdatePlan(id=plan.id,
+                          planned_amount=plan.planned_amount,
+                          month=plan.month,
+                          category=plan.category)
 
 
 class Mutation(graphene.ObjectType):
