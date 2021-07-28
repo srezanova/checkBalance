@@ -151,6 +151,66 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
+    def test_month_query(self):
+        query = '''
+            query {
+                month(id:200) {
+                    id
+                }
+            }
+                '''
+
+        expected = {'month': {'id': '200'}}
+
+        executed = execute_query(query, self.user)
+        data = executed.get('data')
+        self.assertEqual(data, expected)
+
+    def test_category_query(self):
+        query = '''
+            query {
+                category(id:300) {
+                    id
+                }
+            }
+                '''
+
+        expected = {'category': {'id': '300'}}
+
+        executed = execute_query(query, self.user)
+        data = executed.get('data')
+        self.assertEqual(data, expected)
+
+    def test_transaction_query(self):
+        query = '''
+            query {
+                transaction(id:400) {
+                    id
+                }
+            }
+                '''
+
+        expected = {'transaction': {'id': '400'}}
+
+        executed = execute_query(query, self.user)
+        data = executed.get('data')
+        self.assertEqual(data, expected)
+
+    def test_plan_query(self):
+        query = '''
+            query {
+                plan(id:500) {
+                    id
+                }
+            }
+                '''
+
+        expected = {'plan': {'id': '500'}}
+
+        executed = execute_query(query, self.user)
+        data = executed.get('data')
+        self.assertEqual(data, expected)
+
     def test_months_filter_query(self):
         query = '''
             query {

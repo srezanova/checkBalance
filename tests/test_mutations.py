@@ -354,8 +354,6 @@ class QueryTest(TestCase):
 
         executed = execute_query(query, self.user)
         data = executed.get('data')
-        print('')
-        print(data)
         self.assertEqual(data, expected)
 
     def test_create_plan_mutation(self):
@@ -386,7 +384,8 @@ class QueryTest(TestCase):
             }
                 '''
 
-        expected = OrderedDict([('updatePlan', {'id': '500', 'plannedAmount': 777})])
+        expected = OrderedDict(
+            [('updatePlan', {'id': '500', 'plannedAmount': 777})])
 
         executed = execute_query(query, self.user)
         data = executed.get('data')
