@@ -9,8 +9,8 @@ from users.models import CustomUser as CustomUserModel
 class User(DjangoObjectType):
     class Meta:
         model = CustomUserModel
-        fields = ['id', 'email']
-        description = "Type definition for a single user."
+        fields = ['id', 'email', 'avatar']
+        description = "Type definition for a single user"
 
 
 class Query(graphene.ObjectType):
@@ -23,5 +23,7 @@ class Query(graphene.ObjectType):
 
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
+
+        user.avatar = user.gravatar_url()
 
         return user
