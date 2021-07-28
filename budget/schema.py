@@ -76,17 +76,29 @@ class Plan(DjangoObjectType):
 
 
 class Query(graphene.ObjectType):
+    category = graphene.Field(Category,
+                              id=graphene.ID(required=True),
+                              description='Single category query')
+
     categories = graphene.List(Category,
                                id=graphene.ID(),
                                name=graphene.String(),
                                group=GroupChoice(),
                                description='Categories query')
 
+    month = graphene.Field(Month,
+                           id=graphene.ID(required=True),
+                           description='Single month query')
+
     months = graphene.List(Month,
                            id=graphene.ID(),
                            year=YearChoice(),
                            month=MonthChoice(),
                            description='Months query')
+
+    transaction = graphene.Field(Transaction,
+                                 id=graphene.ID(required=True),
+                                 description='Single transaction query')
 
     transactions = graphene.List(Transaction,
                                  id=graphene.ID(),
@@ -97,11 +109,71 @@ class Query(graphene.ObjectType):
                                  month_id=graphene.ID(),
                                  description='Transactions query')
 
+    plan = graphene.Field(Plan,
+                          id=graphene.ID(required=True),
+                          description='Single plan query')
+
     plans = graphene.List(Plan,
                           id=graphene.ID(),
                           category_id=graphene.ID(),
                           month_id=graphene.ID(),
                           description='Plans query')
+
+    def resolve_category(self, info, id):
+        '''Resolves single category'''
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('Unauthorized.')
+
+        try:
+            category = CategoryModel.objects.get(id=id, user=user)
+        except CategoryModel.DoesNotExist:
+            return None
+
+        return category
+
+    def resolve_transaction(self, info, id):
+        '''Resolves single transaction'''
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('Unauthorized.')
+
+        try:
+            transaction = TransactionModel.objects.get(id=id, user=user)
+        except TransactionModel.DoesNotExist:
+            return None
+
+        return transaction
+
+    def resolve_month(self, info, id):
+        '''Resolves single month'''
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('Unauthorized.')
+
+        try:
+            month = MonthModel.objects.get(id=id, user=user)
+        except MonthModel.DoesNotExist:
+            return None
+
+        return month
+
+    def resolve_plan(self, info, id):
+        '''Resolves single month'''
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('Unauthorized.')
+
+        try:
+            plan = PlanModel.objects.get(id=id, user=user)
+        except PlanModel.DoesNotExist:
+            return None
+
+        return plan
 
     def resolve_categories(self, info, id=None, name=None, group=None):
         '''Resolves categories'''
