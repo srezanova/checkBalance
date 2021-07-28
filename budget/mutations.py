@@ -23,7 +23,7 @@ class CreateTransaction(graphene.Mutation):
         month_id = graphene.ID(required=True)
 
     @staticmethod
-    def mutate(self, info, amount=None, description=None, category_id=None, month_id=None):
+    def mutate(self, info, amount, description=None, category_id=None, month_id=None):
         user = info.context.user
 
         if user.is_anonymous:
@@ -297,18 +297,6 @@ class DeleteCategory(graphene.Mutation):
         return DeleteCategory(success=success)
 
 
-class MonthInput(graphene.InputObjectType):
-    '''
-    Arguments for Month create/update mutation classes.
-    Defines fields allowing user to create or change the month data.
-    '''
-    month_id = graphene.ID()
-    year = graphene.String()
-    month = graphene.String()
-    start_month_savings = graphene.Int()
-    start_month_balance = graphene.Int()
-
-
 class CreateMonth(graphene.Mutation):
     '''
     Creates month. User can't create month that already exists.
@@ -409,37 +397,46 @@ class PlanInput(graphene.InputObjectType):
 
 
 class CreatePlan(graphene.Mutation):
-    plan = graphene.Field(Plan)
+    '''Creates plan.'''
+    id = graphene.ID()
+    category = graphene.Field(Category)
+    month = graphene.Field(Month)
+    planned_amount = graphene.Int()
 
     class Arguments:
-        plan_data = PlanInput(required=True)
+        category_id = graphene.ID(required=True)
+        month_id = graphene.ID(required=True)
+        planned_amount = graphene.Int(required=True)
 
     @staticmethod
-    def mutate(self, info, plan_data):
+    def mutate(self, info, category_id, month_id, planned_amount):
         user = info.context.user
+
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
-        category = CategoryModel.objects.get(id=plan_data.category_id)
-        if category.user != user:
-            raise GraphQLError("Can't find category with given category ID.")
-        month = MonthModel.objects.get(id=plan_data.month_id, user=user)
-        if not month:
-            raise GraphQLError("Can't find month with given month ID.")
-        if PlanModel.objects.filter(
-            category_id=plan_data.category_id,
-            month_id=plan_data.month_id,
-            user=user
-        ).exists():
-            raise GraphQLError('Created plan already exists.')
 
-        plan_instance = PlanModel(
-            planned_amount=plan_data.planned_amount,
+        try:
+            category = CategoryModel.objects.get(id=category_id, user=user)
+        except CategoryModel.DoesNotExist:
+            raise GraphQLError('Category not found.')
+
+        try:
+            month = MonthModel.objects.get(id=month_id, user=user)
+        except MonthModel.DoesNotExist:
+            raise GraphQLError('Month not found.')
+
+        plan = PlanModel(
+            planned_amount=planned_amount,
             user=user,
-            category_id=plan_data.category_id,
-            month_id=plan_data.month_id,
+            category=category,
+            month=month,
         )
-        plan_instance.save()
-        return CreatePlan(plan=plan_instance)
+        plan.save()
+
+        return CreatePlan(id=plan.id,
+                          planned_amount=planned_amount,
+                          category=category,
+                          month=month)
 
 
 class UpdatePlan(graphene.Mutation):
