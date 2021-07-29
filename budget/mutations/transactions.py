@@ -5,10 +5,7 @@ from graphql_auth.bases import Output
 from budget.models import Transaction as TransactionModel
 from budget.models import Category as CategoryModel
 from budget.models import Month as MonthModel
-from budget.schema import transactions
-from budget.schema.transactions import Transaction, GroupChoice
-from budget.schema.categories import Category
-from budget.schema.months import Month
+from budget.schema.transactions import Transaction, TransactionGroups
 
 
 class CreateTransaction(graphene.Mutation):
@@ -17,7 +14,7 @@ class CreateTransaction(graphene.Mutation):
         description = graphene.String()
         category = graphene.ID()
         month = graphene.ID(required=True)
-        group = GroupChoice(required=True)
+        group = TransactionGroups(required=True)
 
     Output = Transaction
 
@@ -61,7 +58,7 @@ class TransactionInput(graphene.InputObjectType):
     description = graphene.String()
     category = graphene.ID()
     month = graphene.ID(required=True)
-    group = GroupChoice(required=True)
+    group = TransactionGroups(required=True)
 
 
 class CreateTransactions(graphene.Mutation):

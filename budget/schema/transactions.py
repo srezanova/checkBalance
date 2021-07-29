@@ -8,7 +8,7 @@ from budget.models import Category as CategoryModel
 from budget.models import Month as MonthModel
 
 
-class GroupChoice(graphene.Enum):
+class TransactionGroups(graphene.Enum):
     Expense = 'Expense'
     Income = 'Income'
     Savings = 'Savings'
@@ -35,7 +35,7 @@ class Query(graphene.ObjectType):
                                  created_at=graphene.String(),
                                  category=graphene.ID(),
                                  month=graphene.ID(),
-                                 group=GroupChoice())
+                                 group=TransactionGroups())
 
     def resolve_transaction(self, info, id):
         '''Resolves single transaction'''
