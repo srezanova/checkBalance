@@ -176,8 +176,19 @@ class DeleteTransaction(graphene.Mutation):
         return None
 
 
+class TransactionActions(graphene.Mutation):
+    create = CreateTransaction.Field()
+    update = UpdateTransaction.Field()
+    delete = DeleteTransaction.Field()
+
+    @staticmethod
+    def mutate(self, info):
+        return TransactionActions()
+
+
 class Mutation(graphene.ObjectType):
     create_transaction = CreateTransaction.Field()
     create_transactions = CreateTransactions.Field()
     update_transaction = UpdateTransaction.Field()
     delete_transaction = DeleteTransaction.Field()
+    apply_transactions_updates = TransactionActions.Field()
