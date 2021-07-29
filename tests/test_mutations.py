@@ -50,10 +50,25 @@ class QueryTest(TestCase):
             start_month_balance=100,
         )
 
+        self.month1 = MonthModel.objects.create(
+            id=201,
+            user=self.user1,
+            month=1,
+            year=2021,
+            start_month_savings=100,
+            start_month_balance=100,
+        )
+
         self.category = CategoryModel.objects.create(
             id=300,
             user=self.user,
             name='Dogs',
+        )
+
+        self.category1 = CategoryModel.objects.create(
+            id=301,
+            user=self.user,
+            name='Food',
         )
 
         self.transaction = TransactionModel.objects.create(
@@ -68,11 +83,10 @@ class QueryTest(TestCase):
 
         self.transaction1 = TransactionModel.objects.create(
             id=401,
-            user=self.user,
-            category=self.category,
-            month=self.month,
+            user=self.user1,
+            month=self.month1,
             amount=1000,
-            description='test',
+            description='test second user',
             group='Expense'
         )
 
@@ -88,7 +102,9 @@ class QueryTest(TestCase):
         self.user.delete()
         self.user1.delete()
         self.month.delete()
+        self.month1.delete()
         self.category.delete()
+        self.category1.delete()
         self.transaction.delete()
         self.transaction1.delete()
         self.plan.delete()
@@ -133,17 +149,14 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
     def test_create_transaction_mutation(self):
         query = '''
             mutation {
-                createTransaction(amount:100, categoryId:300,
-                description:"test", monthId:200) {
+                createTransaction(amount:100,
+                group:Expense,
+                month:200) {
                     amount
-                    description
-                    category {
-                        id
-                    }
+                    group
                     month {
                         id
                     }
@@ -151,72 +164,55 @@ class QueryTest(TestCase):
             }
                 '''
 
-        expected = OrderedDict([('createTransaction', {
-                               'amount': 100, 'description': 'test', 'category': {'id': '300'}, 'month': {'id': '200'}})])
+        expected = OrderedDict([
+            ('createTransaction', {'amount': 100,
+                                   'group': 'EXPENSE',
+                                   'month': {'id': '200'}})])
 
         executed = execute_query(query, self.user)
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
     def test_create_transaction_mutation_user1(self):
         query = '''
             mutation {
-                createTransaction(amount:100, categoryId:300,
-                description:"test", monthId:200) {
-                    amount
-                    description
-                    category {
-                        id
-                    }
-                    month {
-                        id
-                    }
+                createTransaction(amount:100,
+                    group:Expense,
+                    month:201,
+                    category:300) {
+                        amount
+                        group
+                        category {
+                            id
+                        }
+                        month {
+                            id
+                        }
                 }
             }
                 '''
 
         expected = OrderedDict([('createTransaction', {
-                               'amount': 100, 'description': 'test', 'category': None, 'month': None})])
+            'amount': 100, 'group': 'EXPENSE',
+            'category': None,
+            'month': {'id': '201'}})])
 
         executed = execute_query(query, self.user1)
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
     def test_create_transactions_mutation_user(self):
         query = '''
             mutation {
                 createTransactions(transactions:
-                [{amount:100, monthId:200, categoryId:300},
-                {amount:200, monthId:200, categoryId:300}]) {
-                    transactions {
-                        amount
-                    }
-                }
-            }
-                '''
-
-        expected = OrderedDict([('createTransactions',
-                                 {'transactions': [{'amount': 100}, {'amount': 200}]})])
-
-        executed = execute_query(query, self.user)
-        data = executed.get('data')
-        self.assertEqual(data, expected)
-
-    @skip('under development')
-    def test_create_transactions_mutation_user1(self):
-        query = '''
-            mutation {
-                createTransactions(transactions:
-                [{amount:100, monthId:200, categoryId:300},
-                {amount:200, monthId:200, categoryId:300}]) {
+                [{amount:100, month:201, group:Expense},
+                {amount:200, month:200, category:300, group:Savings},
+                {amount:300, month:200, category:305, group:Income},
+                {amount:400, month:200, group:Expense},
+                ]) {
                     transactions {
                         amount
                         category {
-                            id
-                        }
-                        month {
                             id
                         }
                     }
@@ -225,45 +221,74 @@ class QueryTest(TestCase):
                 '''
 
         expected = OrderedDict([('createTransactions', {'transactions': [
-            {'amount': 100, 'category': None, 'month': None},
-            {'amount': 200, 'category': None, 'month': None}]})])
+            {'amount': 200, 'category': {'id': '300'}},
+            {'amount': 300, 'category': None},
+            {'amount': 400, 'category': None}]})])
+
+        executed = execute_query(query, self.user)
+        data = executed.get('data')
+        self.assertEqual(data, expected)
+
+    def test_update_transaction_mutation(self):
+        query = '''
+                mutation {
+                updateTransaction (
+                    id:400,
+                    amount:888,
+                    category:301 ) {
+                        id
+                        amount
+                        category {
+                            id
+                        }
+                    }
+                }
+                '''
+
+        expected = OrderedDict([('updateTransaction',
+                                 {'id': '400', 'amount': 888,
+                                  'category': {'id': '301'}})])
+
+        executed = execute_query(query, self.user)
+        data = executed.get('data')
+        self.assertEqual(data, expected)
+
+    def test_update_transaction_mutation_user1(self):
+        query = '''
+                mutation {
+                updateTransaction (
+                    id:401,
+                    amount:888,
+                    category:301 ) {
+                        id
+                        amount
+                        category {
+                            id
+                        }
+                    }
+                }
+                '''
+
+        expected = OrderedDict([('updateTransaction',
+                                 {'id': '401', 'amount': 888,
+                                  'category': None})])
 
         executed = execute_query(query, self.user1)
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
-    def test_update_transaction_mutation(self):
-        query = '''
-            mutation {
-                updateTransaction(id:400,
-                description:"TEST") {
-                    id
-                    description
-                }
-            }
-                '''
-
-        expected = OrderedDict([('updateTransaction',
-                                 {'id': '400', 'description': 'TEST'})])
-
-        executed = execute_query(query, self.user)
-        data = executed.get('data')
-        self.assertEqual(data, expected)
-
-    @skip('under development')
     def test_delete_transaction_mutation(self):
         query = '''
             mutation {
                 deleteTransaction(id:401) {
-                    success
+                    id
                 }
             }
                 '''
 
-        expected = OrderedDict([('deleteTransaction', {'success': True})])
+        expected = {"deleteTransaction": None}
 
-        executed = execute_query(query, self.user)
+        executed = execute_query(query, self.user1)
         data = executed.get('data')
         self.assertEqual(data, expected)
 
@@ -387,12 +412,11 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
     def test_create_plan_mutation(self):
         query = '''
             mutation {
-                createPlan(monthId:200,
-                categoryId:300,
+                createPlan(month:200,
+                category:300,
                 plannedAmount:1000) {
                     plannedAmount
                 }
@@ -405,7 +429,6 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
     def test_update_plan_mutation(self):
         query = '''
             mutation {

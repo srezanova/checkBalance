@@ -8,7 +8,6 @@ from budget.schema.plans import Plan
 
 
 class CreatePlan(graphene.Mutation):
-    '''Creates plan'''
     class Arguments:
         category = graphene.ID(required=True)
         month = graphene.ID(required=True)
@@ -46,7 +45,6 @@ class CreatePlan(graphene.Mutation):
 
 
 class UpdatePlan(graphene.Mutation):
-    '''Updates planned amount with given ID'''
     class Arguments:
         id = graphene.ID(required=True)
         planned_amount = graphene.Int(required=True)

@@ -9,7 +9,7 @@ class CreateMonth(graphene.Mutation):
     '''
     Creates month. User can't create month that already exists.
     Month value is a number in range 0, 11.
-    Default for start values is 0.
+    Default for start values is 0
     '''
 
     class Arguments:

@@ -18,9 +18,9 @@ class Category(DjangoObjectType):
 class Query(graphene.ObjectType):
     category = graphene.Field(Category,
                               id=graphene.ID(required=True),
-                              description='Single category query')
+                              description='Default color is gray')
 
-    categories = graphene.List(Category, description='Categories query')
+    categories = graphene.List(Category)
 
     def resolve_category(self, info, id):
         '''Resolves single category'''

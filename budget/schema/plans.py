@@ -19,13 +19,11 @@ class Plan(DjangoObjectType):
 
 class Query(graphene.ObjectType):
     plan = graphene.Field(Plan,
-                          id=graphene.ID(required=True),
-                          description='Single plan query')
+                          id=graphene.ID(required=True))
 
     plans = graphene.List(Plan,
                           category=graphene.ID(),
-                          month=graphene.ID(),
-                          description='Plans query. Category and month takes ID.')
+                          month=graphene.ID())
 
     def resolve_plan(self, info, id):
         '''Resolves single month'''

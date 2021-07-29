@@ -164,7 +164,6 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
     def test_transaction_query(self):
         query = '''
             query {
@@ -195,35 +194,13 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
-    def test_months_filter_query(self):
-        query = '''
-            query {
-                months (id:200, month:January, year:A_2021) {
-                    id
-                    month
-                    year
-                    startMonthSavings
-                    startMonthBalance
-                }
-            }
-                '''
-
-        expected = {'months': [
-            {'id': '200', 'month': 'JANUARY',
-             'year': 'A_2021', 'startMonthSavings': 100, 'startMonthBalance': 100}]}
-
-        executed = execute_query(query, self.user)
-        data = executed.get('data')
-        self.assertEqual(data, expected)
-
-    @skip('under development')
     def test_transactions_query(self):
         query = '''
             query {
                 transactions {
                     id
                     amount
+                    group
                     description
                     month {
                     id
@@ -235,21 +212,21 @@ class QueryTest(TestCase):
             }
                 '''
 
-        expected = {'transactions': [{'id': '400', 'amount': 1000, 'description': 'test', 'month': {
+        expected = {'transactions': [{'id': '400', 'group': 'EXPENSE', 'amount': 1000, 'description': 'test', 'month': {
             'id': '200'}, 'category': {'id': '300'}}]}
 
         executed = execute_query(query, self.user)
         data = executed.get('data')
         self.assertEqual(data, expected)
 
-    @skip('under development')
     def test_transactions_filter_query(self):
         query = '''
             query {
-                transactions(id:400, amount:1000) {
+                transactions(month:200, category:300, group:Expense) {
                     id
                     amount
                     description
+                    group
                     month {
                     id
                     }
@@ -260,8 +237,10 @@ class QueryTest(TestCase):
             }
                 '''
 
-        expected = {'transactions': [{'id': '400', 'amount': 1000, 'description': 'test', 'month': {
-            'id': '200'}, 'category': {'id': '300'}}]}
+        expected = {'transactions': [
+            {'id': '400', 'amount': 1000, 'description': 'test', 'group': 'EXPENSE',
+             'month': {'id': '200'},
+             'category': {'id': '300'}}]}
 
         executed = execute_query(query, self.user)
         data = executed.get('data')

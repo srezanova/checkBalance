@@ -19,9 +19,9 @@ class Query(graphene.ObjectType):
 
     month = graphene.Field(Month,
                            id=graphene.ID(required=True),
-                           description='Single month query')
+                           description='Month value is a number in range 0, 11.')
 
-    months = graphene.List(Month, description='Months query')
+    months = graphene.List(Month)
 
     def resolve_month(self, info, id):
         '''Resolves single month'''

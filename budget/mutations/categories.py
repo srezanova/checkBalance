@@ -7,7 +7,7 @@ from budget.schema.categories import Category
 
 class CreateCategory(graphene.Mutation):
     '''
-    Creates category. User can't create a category with name that already exists.
+    User can't create a category with name that already exists.
     Default color is gray
     '''
     class Arguments:
@@ -38,7 +38,7 @@ class CreateCategory(graphene.Mutation):
 
 
 class UpdateCategory(graphene.Mutation):
-    '''Updates category. Doesn't update to already existing category.'''
+    '''Doesn't update to already existing category'''
     class Arguments:
         id = graphene.ID(required=True)
         name = graphene.String()
@@ -74,7 +74,7 @@ class UpdateCategory(graphene.Mutation):
 
 
 class DeleteCategory(graphene.Mutation):
-    '''Delete category by ID'''
+    '''Delete category with given ID'''
 
     class Arguments:
         id = graphene.ID(required=True)
