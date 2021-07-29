@@ -38,8 +38,8 @@ class QueryTest(TestCase):
         self.month = MonthModel.objects.create(
             id=200,
             user=self.user,
-            month='January',
-            year='2021',
+            month=1,
+            year=2021,
             start_month_savings=100,
             start_month_balance=100,
         )
@@ -48,7 +48,7 @@ class QueryTest(TestCase):
             id=300,
             user=self.user,
             name='Dogs',
-            group='Expense',
+            color='gray',
         )
 
         self.transaction = TransactionModel.objects.create(
@@ -58,6 +58,7 @@ class QueryTest(TestCase):
             month=self.month,
             amount=1000,
             description='test',
+            group='Expense'
         )
 
         self.plan = PlanModel.objects.create(
@@ -100,31 +101,13 @@ class QueryTest(TestCase):
                 categories {
                     id
                     name
-                    group
+                    color
                 }
             }
                 '''
 
         expected = {'categories': [
-            {'id': '300', 'name': 'Dogs', 'group': 'EXPENSE'}]}
-
-        executed = execute_query(query, self.user)
-        data = executed.get('data')
-        self.assertEqual(data, expected)
-
-    def test_categories_filter_query(self):
-        query = '''
-            query {
-                categories (id:300, name:"Dogs", group:Expense) {
-                    id
-                    name
-                    group
-                }
-            }
-                '''
-
-        expected = {'categories': [
-            {'id': '300', 'name': 'Dogs', 'group': 'EXPENSE'}]}
+            {'id': '300', 'name': 'Dogs', 'color': 'gray'}]}
 
         executed = execute_query(query, self.user)
         data = executed.get('data')
@@ -144,8 +127,8 @@ class QueryTest(TestCase):
                 '''
 
         expected = {'months': [
-            {'id': '200', 'month': 'JANUARY',
-             'year': 'A_2021', 'startMonthSavings': 100, 'startMonthBalance': 100}]}
+            {'id': '200', 'month': 1,
+             'year': 2021, 'startMonthSavings': 100, 'startMonthBalance': 100}]}
 
         executed = execute_query(query, self.user)
         data = executed.get('data')
@@ -181,6 +164,7 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
+    @skip('under development')
     def test_transaction_query(self):
         query = '''
             query {
@@ -211,6 +195,7 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
+    @skip('under development')
     def test_months_filter_query(self):
         query = '''
             query {
@@ -232,6 +217,7 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
+    @skip('under development')
     def test_transactions_query(self):
         query = '''
             query {
@@ -256,6 +242,7 @@ class QueryTest(TestCase):
         data = executed.get('data')
         self.assertEqual(data, expected)
 
+    @skip('under development')
     def test_transactions_filter_query(self):
         query = '''
             query {
@@ -308,12 +295,9 @@ class QueryTest(TestCase):
     def test_plans_filter_query(self):
         query = '''
             query {
-                plans (id:500, categoryId:300, monthId:200){
+                plans (category:300){
                     id
                     plannedAmount
-                    month {
-                        id
-                    }
                     category {
                         id
                     }
@@ -322,9 +306,7 @@ class QueryTest(TestCase):
                 '''
 
         expected = {'plans': [
-            {'id': '500', 'plannedAmount': 10,
-             'month': {'id': '200'},
-             'category': {'id': '300'}}]}
+            {'id': '500', 'plannedAmount': 10, 'category': {'id': '300'}}]}
 
         executed = execute_query(query, self.user)
         data = executed.get('data')

@@ -17,9 +17,9 @@ class Month(models.Model):
     start_month_savings = models.IntegerField(blank=True, null=True, default=0)
     start_month_balance = models.IntegerField(blank=True, null=True, default=0)
 
-    def validate_month(value):
-        if value not in [1, 11]:
-            raise ValidationError('%s not in range (1,10)' % value)
+    def validate_month(self, value):
+        if value not in range(12):
+            raise ValidationError('%s not in range (0,11)' % value)
 
 
 class Transaction(models.Model):

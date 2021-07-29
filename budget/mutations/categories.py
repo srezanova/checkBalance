@@ -1,11 +1,8 @@
 import graphene
 from graphql import GraphQLError
 
-from budget.models import Transaction as TransactionModel
 from budget.models import Category as CategoryModel
-from budget.models import Month as MonthModel
-from budget.models import Plan as PlanModel
-from budget.schema import GroupChoice, Transaction, Category, Month, Plan
+from budget.schema import Category
 
 
 class CreateCategory(graphene.Mutation):

@@ -1,5 +1,6 @@
 import graphene
 from graphql import GraphQLError
+from graphql_auth.bases import Output
 
 from budget.models import Transaction as TransactionModel
 from budget.models import Category as CategoryModel
@@ -9,58 +10,50 @@ from budget.schema import GroupChoice, Transaction, Category, Month, Plan
 
 
 class CreatePlan(graphene.Mutation):
-    '''Creates plan.'''
-    id = graphene.ID()
-    category = graphene.Field(Category)
-    month = graphene.Field(Month)
-    planned_amount = graphene.Int()
-
+    '''Creates plan'''
     class Arguments:
-        category_id = graphene.ID(required=True)
-        month_id = graphene.ID(required=True)
+        category = graphene.ID(required=True)
+        month = graphene.ID(required=True)
         planned_amount = graphene.Int(required=True)
 
+    Output = Plan
+
     @staticmethod
-    def mutate(self, info, category_id, month_id, planned_amount):
+    def mutate(self, info, category, month, planned_amount):
         user = info.context.user
 
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
 
         try:
-            category = CategoryModel.objects.get(id=category_id, user=user)
+            category_instance = CategoryModel.objects.get(
+                id=category, user=user)
         except CategoryModel.DoesNotExist:
             raise GraphQLError('Category not found.')
 
         try:
-            month = MonthModel.objects.get(id=month_id, user=user)
+            month_instance = MonthModel.objects.get(id=month, user=user)
         except MonthModel.DoesNotExist:
             raise GraphQLError('Month not found.')
 
         plan = PlanModel(
             planned_amount=planned_amount,
             user=user,
-            category=category,
-            month=month,
+            category=category_instance,
+            month=month_instance,
         )
         plan.save()
 
-        return CreatePlan(id=plan.id,
-                          planned_amount=planned_amount,
-                          category=category,
-                          month=month)
+        return plan
 
 
 class UpdatePlan(graphene.Mutation):
-    '''Updates planned amount.'''
-    id = graphene.ID()
-    category = graphene.Field(Category)
-    month = graphene.Field(Month)
-    planned_amount = graphene.Int()
-
+    '''Updates planned amount with given ID'''
     class Arguments:
         id = graphene.ID(required=True)
         planned_amount = graphene.Int(required=True)
+
+    Output = Plan
 
     @staticmethod
     def mutate(self, info, id, planned_amount):
@@ -76,10 +69,7 @@ class UpdatePlan(graphene.Mutation):
 
         plan.planned_amount = planned_amount
         plan.save()
-        return UpdatePlan(id=plan.id,
-                          planned_amount=plan.planned_amount,
-                          month=plan.month,
-                          category=plan.category)
+        return plan
 
 
 class Mutation(graphene.ObjectType):

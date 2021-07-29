@@ -207,20 +207,24 @@ class Query(graphene.ObjectType):
         if user.is_anonymous:
             raise GraphQLError('Unauthorized.')
 
-        if category is not None:
+        category_id = category
+        month_id = month
+
+        if category_id is not None:
             try:
-                category_instance = CategoryModel.objects.get(id=category)
+                category = CategoryModel.objects.get(id=category_id)
             except CategoryModel.DoesNotExist:
                 return []
 
-        if month is not None:
+        if month_id is not None:
             try:
-                month_instance = MonthModel.objects.get(id=month)
+                month = MonthModel.objects.get(id=month_id)
             except MonthModel.DoesNotExist:
                 return []
 
         # saving passed args for filter and deleting fields we cannot pass in filter
         saved_args = locals()
+
         del saved_args['self']
         del saved_args['info']
         del saved_args['category_id']
