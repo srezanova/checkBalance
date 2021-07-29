@@ -8,7 +8,7 @@ from budget.schema.months import Month
 class CreateMonth(graphene.Mutation):
     '''
     Creates month. User can't create month that already exists.
-    Month value is a number in range 0, 11.
+    Field "month" takes a number in range 0, 11.
     Default for start values is 0
     '''
 
