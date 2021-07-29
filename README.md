@@ -1,7 +1,11 @@
 # check balance
 
-Personal budget planner app
+## Personal budget planner app
+
+Framework - Django
 
 API - GraphQL
-Authorization - django-graphql-auth
+
+Authorization - django-graphql-jwt
+
 Database - PostgreSQL
