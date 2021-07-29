@@ -1,7 +1,10 @@
 import graphene
 from graphql_auth import mutations
 
-import budget.schema
+import budget.schema.categories
+import budget.schema.transactions
+import budget.schema.months
+import budget.schema.plans
 import budget.mutations.categories
 import budget.mutations.transactions
 import budget.mutations.months
@@ -14,7 +17,13 @@ class AuthMutation(graphene.ObjectType):
     login = mutations.ObtainJSONWebToken.Field()
 
 
-class Query(users.schema.Query, budget.schema.Query, graphene.ObjectType):
+class Query(
+        users.schema.Query,
+        budget.schema.categories.Query,
+        budget.schema.transactions.Query,
+        budget.schema.months.Query,
+        budget.schema.plans.Query,
+        graphene.ObjectType):
     pass
 
 

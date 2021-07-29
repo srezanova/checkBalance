@@ -2,7 +2,7 @@ import graphene
 from graphql import GraphQLError
 
 from budget.models import Category as CategoryModel
-from budget.schema import Category
+from budget.schema.categories import Category
 
 
 class CreateCategory(graphene.Mutation):

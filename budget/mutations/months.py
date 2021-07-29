@@ -2,7 +2,7 @@ import graphene
 from graphql import GraphQLError
 
 from budget.models import Month as MonthModel
-from budget.schema import Month
+from budget.schema.months import Month
 
 
 class CreateMonth(graphene.Mutation):
