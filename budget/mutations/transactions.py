@@ -199,6 +199,11 @@ class ApplyTransactionsUpdates(graphene.Mutation):
     @staticmethod
     def mutate(self, info, **kwargs):
 
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('Unauthorized.')
+
         transactions = []
 
         for action in kwargs.get('actions'):
@@ -214,12 +219,13 @@ class ApplyTransactionsUpdates(graphene.Mutation):
 
                 try:
                     category_instance = CategoryModel.objects.get(
-                        id=data['category'])
+                        id=data['category'], user=user)
                 except CategoryModel.DoesNotExist:
                     category_instance = None
 
                 try:
-                    month_instance = MonthModel.objects.get(id=data['month'])
+                    month_instance = MonthModel.objects.get(
+                        id=data['month'], user=user)
                 except MonthModel.DoesNotExist:
                     continue
 
@@ -232,6 +238,7 @@ class ApplyTransactionsUpdates(graphene.Mutation):
                     group=data['group'],
                     category=category_instance,
                     month=month_instance,
+                    user=user
                 )
 
             if type == 'update':
@@ -244,7 +251,7 @@ class ApplyTransactionsUpdates(graphene.Mutation):
                 if 'category' in data:
                     try:
                         category_instance = CategoryModel.objects.get(
-                            id=data['category'])
+                            id=data['category'], user=user)
                         transaction.category_id = data['category']
                     except CategoryModel.DoesNotExist:
                         pass
@@ -258,7 +265,8 @@ class ApplyTransactionsUpdates(graphene.Mutation):
 
             if type == 'delete':
                 try:
-                    transaction = TransactionModel.objects.get(id=data['id'])
+                    transaction = TransactionModel.objects.get(
+                        id=data['id'], user=user)
                     transaction.delete()
                     transaction = None
                 except TransactionModel.DoesNotExist:
