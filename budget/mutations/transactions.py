@@ -184,14 +184,14 @@ class TransactionActions(graphene.Enum):
 
 
 class ActionInput(graphene.InputObjectType):
+    '''Takes type of action and transaction data'''
     data = graphene.Field(TransactionInput)
     type = TransactionActions()
 
 
 class ApplyTransactionsUpdates(graphene.Mutation):
-    '''description'''
+    '''Takes multiple actions in one request'''
     transactions = graphene.List(lambda: Transaction)
-    success = graphene.Boolean()
 
     class Input:
         actions = graphene.List(ActionInput)
@@ -209,7 +209,7 @@ class ApplyTransactionsUpdates(graphene.Mutation):
                 if 'category' not in data:
                     data['category'] = None
 
-                if 'month' not in data:
+                if 'month' not in data or 'amount' not in data or 'group' not in data:
                     continue
 
                 try:
@@ -260,10 +260,10 @@ class ApplyTransactionsUpdates(graphene.Mutation):
                 try:
                     transaction = TransactionModel.objects.get(id=data['id'])
                     transaction.delete()
+                    transaction = None
                 except TransactionModel.DoesNotExist:
                     continue
 
-            print(transaction)
             transactions.append(transaction)
 
         return ApplyTransactionsUpdates(transactions=transactions)
