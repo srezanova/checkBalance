@@ -54,11 +54,12 @@ class TransactionInput(graphene.InputObjectType):
     Arguments for Transaction create/update mutation classes.
     Defines fields allowing user to create or change the data.
     '''
-    amount = graphene.Int(required=True)
+    id = graphene.ID()
+    amount = graphene.Int()
     description = graphene.String()
     category = graphene.ID()
-    month = graphene.ID(required=True)
-    group = TransactionGroups(required=True)
+    month = graphene.ID()
+    group = TransactionGroups()
 
 
 class CreateTransactions(graphene.Mutation):
@@ -176,14 +177,96 @@ class DeleteTransaction(graphene.Mutation):
         return None
 
 
-class TransactionActions(graphene.Mutation):
-    create = CreateTransaction.Field()
-    update = UpdateTransaction.Field()
-    delete = DeleteTransaction.Field()
+class TransactionActions(graphene.Enum):
+    create = 'create'
+    update = 'update'
+    delete = 'delete'
+
+
+class ActionInput(graphene.InputObjectType):
+    data = graphene.Field(TransactionInput)
+    type = TransactionActions()
+
+
+class ApplyTransactionsUpdates(graphene.Mutation):
+    '''description'''
+    transactions = graphene.List(lambda: Transaction)
+    success = graphene.Boolean()
+
+    class Input:
+        actions = graphene.List(ActionInput)
 
     @staticmethod
-    def mutate(self, info):
-        return TransactionActions()
+    def mutate(self, info, **kwargs):
+
+        transactions = []
+
+        for action in kwargs.get('actions'):
+            type = action['type']
+            data = action['data']
+
+            if type == 'create':
+                if 'category' not in data:
+                    data['category'] = None
+
+                if 'month' not in data:
+                    continue
+
+                try:
+                    category_instance = CategoryModel.objects.get(
+                        id=data['category'])
+                except CategoryModel.DoesNotExist:
+                    category_instance = None
+
+                try:
+                    month_instance = MonthModel.objects.get(id=data['month'])
+                except MonthModel.DoesNotExist:
+                    continue
+
+                if 'description' not in data:
+                    data['description'] = ''
+
+                transaction = TransactionModel.objects.create(
+                    amount=data['amount'],
+                    description=data['description'],
+                    group=data['group'],
+                    category=category_instance,
+                    month=month_instance,
+                )
+
+            if type == 'update':
+
+                try:
+                    transaction = TransactionModel.objects.get(id=data['id'])
+                except TransactionModel.DoesNotExist:
+                    continue
+
+                if 'category' in data:
+                    try:
+                        category_instance = CategoryModel.objects.get(
+                            id=data['category'])
+                        transaction.category_id = data['category']
+                    except CategoryModel.DoesNotExist:
+                        pass
+
+                if 'amount' in data:
+                    transaction.amount = data['amount']
+                if 'description' in data:
+                    transaction.description = data['description']
+
+                transaction.save()
+
+            if type == 'delete':
+                try:
+                    transaction = TransactionModel.objects.get(id=data['id'])
+                    transaction.delete()
+                except TransactionModel.DoesNotExist:
+                    continue
+
+            print(transaction)
+            transactions.append(transaction)
+
+        return ApplyTransactionsUpdates(transactions=transactions)
 
 
 class Mutation(graphene.ObjectType):
@@ -191,4 +274,4 @@ class Mutation(graphene.ObjectType):
     create_transactions = CreateTransactions.Field()
     update_transaction = UpdateTransaction.Field()
     delete_transaction = DeleteTransaction.Field()
-    apply_transactions_updates = TransactionActions.Field()
+    apply_transactions_updates = ApplyTransactionsUpdates.Field()
