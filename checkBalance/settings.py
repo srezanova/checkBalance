@@ -36,14 +36,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'budget',
     'graphene_django',
-    'graphql_auth',
     'django_filters',
-    "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
+    'graphql_jwt.refresh_token.apps.RefreshTokenConfig',
     'users',
     'tests',
     'corsheaders',
-    # 'debug_toolbar',
-    # 'graphiql_debug_toolbar',
 ]
 
 SITE_ID = 1
@@ -57,7 +54,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'graphiql_debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'checkBalance.urls'
@@ -98,36 +94,18 @@ GRAPHENE = {
     ],
 }
 
-GRAPH_AUTH = {
-    'USER_FIELDS': ('email'),
-    'ONLY_ADMIN_REGISTRATION': False,
-    'WELCOME_EMAIL_TEMPLATE': None,
-    'EMAIL_FROM': None
-}
 
 AUTHENTICATION_BACKENDS = [
+    'graphql_jwt.backends.JSONWebTokenBackend',
     'django.contrib.auth.backends.ModelBackend',
-    "graphql_auth.backends.GraphQLAuthBackend",
 ]
 
 GRAPHQL_JWT = {
-    "JWT_VERIFY_EXPIRATION": True,
-    "JWT_LONG_RUNNING_REFRESH_TOKEN": True,
-    'JWT_EXPIRATION_DELTA': timedelta(days=30),
+    'JWT_VERIFY_EXPIRATION': True,
+    'JWT_EXPIRATION_DELTA': timedelta(days=10),
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     'JWT_SECRET_KEY': env('JWT_KEY'),
     'JWT_ALGORITHM': 'HS256',
-    "JWT_ALLOW_ANY_CLASSES": [
-        "graphql_auth.mutations.Register",
-        "graphql_auth.mutations.ObtainJSONWebToken",
-    ],
-}
-
-GRAPHQL_AUTH = {
-    'LOGIN_ALLOWED_FIELDS': ['email'],
-    'ALLOW_LOGIN_NOT_VERIFIED': True,
-    'REGISTER_MUTATION_FIELDS': ["email"],
-    'SEND_ACTIVATION_EMAIL': False,
 }
 
 PASSWORD_HASHERS = [

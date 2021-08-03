@@ -39,6 +39,7 @@ class QueryTest(TestCase):
         self.user1 = CustomUser.objects.create_user(
             email='user1@test.com',
             password='testpassword',
+            username='test_user1'
         )
 
         self.month = MonthModel.objects.create(
@@ -113,16 +114,16 @@ class QueryTest(TestCase):
         query = '''
             mutation {
                 register (email:"test@test.com",
-                    password1:"testpassword",
-                    password2:"testpassword") {
-                        success
+                    password:"testpassword",
+                    username:"test_register") {
+                        email
                 }
             }
                 '''
 
         expected = {
             'register': {
-                'success': True
+                'email': 'test@test.com'
             }
         }
 
@@ -134,20 +135,15 @@ class QueryTest(TestCase):
         query = '''
             mutation {
                 login (password:"testpassword", email:"user1@test.com") {
-                    success
+                    token
                 }
             }
                 '''
 
-        expected = {
-            'login': {
-                'success': True
-            }
-        }
-
         executed = execute_query(query, self.user1)
-        data = executed.get('data')
-        self.assertEqual(data, expected)
+        keys = str(executed.keys())
+        expected = "dict_keys(['data'])"
+        self.assertEqual(keys, expected)
 
     def test_create_transaction_mutation(self):
         query = '''

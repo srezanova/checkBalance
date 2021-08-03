@@ -10,6 +10,7 @@ class UserModelTest(TestCase):
 
     def setUp(self):
         self.user = CustomUser.objects.create_user(
+            username='test',
             email='test@test.com',
             password='testpassword',
         )
@@ -28,26 +29,20 @@ class UserModelTest(TestCase):
     def test_user_detail(self):
         self.assertEqual(self.user.email, 'test@test.com')
         self.assertNotEqual(self.user.password, 'testpassword')
-        self.assertFalse(self.user.is_admin)
         self.assertEqual(str(self.user), f'{self.user.email}')
 
     def test_user_no_email(self):
         with self.assertRaises(ValueError):
             user = CustomUser.objects.create_user(
+                username='test1',
                 email='',
                 password='testpassword',
             )
 
-    def test_superuser(self):
-        user = CustomUser.objects.create_superuser(
-            email='admin@test.com',
-            password='testpassword',
-        )
-        self.assertTrue(user.is_admin)
-
     def test_duplicated_email(self):
         with self.assertRaises(IntegrityError):
             user = CustomUser.objects.create_user(
+                username='test2',
                 email='test@test.com',
                 password='testpassword',
             )
@@ -56,6 +51,7 @@ class UserModelTest(TestCase):
         user1 = CustomUser.objects.create_user(
             email='   test1@TEST.COM   ',
             password='testpassword',
+            username='test_normalize'
         )
         self.assertEqual(user1.email, 'test1@test.com')
 
@@ -67,6 +63,7 @@ class BudgetModelTest(TestCase):
         self.user = CustomUser.objects.create_user(
             email='test@test.com',
             password='testpassword',
+            username='test',
         )
 
         self.category = Category.objects.create(

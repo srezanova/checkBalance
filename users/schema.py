@@ -3,13 +3,13 @@ from graphql import GraphQLError
 from graphene_django import DjangoObjectType
 import graphene_django_optimizer as gql_optimizer
 
-from users.models import CustomUser as CustomUserModel
+from .models import CustomUser
 
 
 class User(DjangoObjectType):
     class Meta:
-        model = CustomUserModel
-        fields = ['id', 'email', 'avatar']
+        model = CustomUser
+        fields = ['id', 'email', 'username', 'avatar']
         description = "Type definition for a single user"
 
 
